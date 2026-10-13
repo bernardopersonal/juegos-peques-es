@@ -1,0 +1,718 @@
+/* Diseño: tarjetas grandes para dedos pequeños, una cosa por pantalla.
+   Los colores son variables que cambia el tema de cada niño (js/temas.js). */
+:root {
+  --fondo: #fff7e8;
+  --tinta: #3b2f4a;
+  --tarjeta: #ffffff;
+  --guia: #efe6d8;
+  --c1: #ff8fb8;
+  --c2: #5cc7a3;
+  --c3: #7fb2ff;
+  --c4: #ffb347;
+  --acento: #ff6fa5;
+  --ok: #3fbf7f;
+  --sombra: 0 6px 0 rgba(0, 0, 0, .12);
+  --letra: 'Fredoka', 'Nunito', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  color-scheme: light;
+}
+:root.oscuro { color-scheme: dark; --sombra: 0 6px 0 rgba(0, 0, 0, .35); }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; }
+/* Toques rápidos (🐼🐼, dos toques en un botón...): que el iPad no los tome por un doble toque para hacer zoom.
+   En toda la página (se puede seguir pellizcando); los lienzos de trazar y del juego llevan touch-action: none */
+html { touch-action: manipulation; }
+body {
+  background: var(--fondo);
+  color: var(--tinta);
+  font-family: var(--letra);
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow-x: hidden;
+  transition: background-color .3s;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+button:focus-visible, input:focus-visible, .chip:focus-within { outline: 4px solid var(--acento); outline-offset: 3px; }
+
+/* Decoración de fondo según el tema */
+#deco { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+#deco span { position: absolute; opacity: .16; font-size: 44px; animation: flotar 9s ease-in-out infinite alternate; }
+@keyframes flotar { to { transform: translateY(-18px) rotate(8deg); } }
+
+.barra {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
+}
+.barra h1 { flex: 1; margin: 0; font-size: clamp(22px, 4vw, 32px); font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.estrellas { font-size: 24px; background: var(--tarjeta); border-radius: 999px; padding: 4px 14px; box-shadow: var(--sombra); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Interruptor de letra: ABC / abc / Abc */
+.btn-letra {
+  flex: none; height: 48px; min-width: 78px; padding: 0 12px; border-radius: 999px; /* mismo ancho con ABC, abc y Abc */
+  background: var(--tarjeta); box-shadow: var(--sombra); font-size: 24px; font-weight: 700; line-height: 1; transition: transform .1s;
+}
+@media (max-width: 480px) {
+  .barra { gap: 8px; }
+  .btn-letra { min-width: 64px; padding: 0 8px; font-size: 21px; }
+  :root.tema-bloques .btn-letra { min-width: 70px; } /* con el borde de 3 px */
+  .estrellas { padding: 4px 10px; font-size: 22px; }
+}
+@media (min-width: 481px) { :root.tema-bloques .btn-letra { min-width: 84px; } }
+.avatar-mini { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-size: 30px; background: var(--tarjeta); box-shadow: var(--sombra); flex: none; }
+.avatar-mini img, .avatar img, .avatar-grande img { width: 100%; height: 100%; object-fit: cover; }
+/* Móviles: sin el avatar pequeño (el nombre ya dice quién juega), para que quepa el nombre junto al ABC y las estrellas */
+@media (max-width: 430px) { .avatar-mini { display: none; } }
+@media (max-width: 370px) { .barra .btn-redondo { width: 52px; height: 52px; } }
+
+.vista { position: relative; z-index: 1; flex: 1; padding: 8px 16px calc(24px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.vista[hidden] { display: none; }
+h2 { margin: 4px 0 0; align-self: flex-start; font-size: 24px; }
+.pregunta { font-size: clamp(28px, 6vw, 44px); font-weight: 700; margin: 12px 0 4px; text-align: center; text-wrap: balance; }
+
+/* Inicio: perfiles */
+.perfiles { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; width: 100%; max-width: 900px; }
+.perfil { position: relative; width: min(40vw, 210px); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.perfil > button.entrar {
+  width: 100%; aspect-ratio: 1; border-radius: 36px; box-shadow: var(--sombra);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  color: #fff; font-size: clamp(24px, 5vw, 34px); font-weight: 700;
+  transition: transform .1s;
+}
+.avatar { width: 62%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-size: clamp(48px, 11vw, 84px); background: rgba(255, 255, 255, .35); }
+.perfil .editar {
+  position: absolute; top: -8px; right: -8px; width: 46px; height: 46px; border-radius: 50%;
+  background: var(--tarjeta); box-shadow: var(--sombra); font-size: 20px;
+}
+.perfil.nuevo > button.entrar { background: transparent; color: var(--tinta); border: 4px dashed color-mix(in srgb, var(--tinta) 30%, transparent); box-shadow: none; }
+/* Créditos de las voces (los pide ElevenLabs): abajo del todo, pequeños pero legibles; al lado, «Padres» */
+.creditos { margin: auto 0 0; font-size: 15px; opacity: .75; }
+.creditos a { color: inherit; }
+.pie-inicio { margin: auto 0 0; width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 18px; }
+.pie-inicio .creditos { margin: 0; }
+.pie-inicio .btn-padres { position: static; align-self: auto; margin: 0; }
+
+/* Perfil: formulario */
+.ficha-perfil {
+  width: 100%; max-width: 620px; background: var(--tarjeta); border-radius: 32px; box-shadow: var(--sombra);
+  padding: 24px clamp(16px, 4vw, 32px); display: flex; flex-direction: column; gap: 20px;
+}
+.avatar-grande { align-self: center; width: 128px; height: 128px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-size: 80px; background: var(--guia); }
+.campo { display: flex; flex-direction: column; gap: 10px; border: 0; margin: 0; padding: 0; }
+.campo > span { font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.campo input {
+  font: inherit; font-size: 26px; padding: 12px 16px; border-radius: 18px;
+  border: 3px solid var(--guia); background: var(--fondo); color: var(--tinta); width: 100%;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip {
+  min-width: 56px; height: 56px; padding: 0 14px; border-radius: 999px; background: var(--fondo);
+  border: 3px solid var(--guia); font-size: 26px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.chip.activo { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 18%, var(--tarjeta)); }
+.chip-foto { font-size: 18px; font-weight: 600; }
+.temas { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+.tema {
+  border-radius: 20px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 16px; font-weight: 600; border: 3px solid transparent;
+}
+.tema .emoji { font-size: 34px; }
+.tema.activo { border-color: var(--acento); transform: scale(1.04); }
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.btn-principal { background: var(--acento); color: #fff; font-size: 24px; font-weight: 700; padding: 14px 32px; border-radius: 999px; box-shadow: var(--sombra); }
+.btn-texto { font-size: 17px; text-decoration: underline; opacity: .75; padding: 8px; }
+.peligro { color: #d33; opacity: 1; font-weight: 700; }
+.confirmar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: var(--fondo); padding: 12px 16px; border-radius: 16px; }
+.confirmar p { margin: 0; flex: 1 1 100%; }
+
+/* Menú */
+.juegos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; width: 100%; max-width: 560px; }
+@media (min-width: 900px) { .juegos { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 900px; } }
+.tarjeta {
+  aspect-ratio: 1; border-radius: 32px; box-shadow: var(--sombra);
+  font-size: clamp(22px, 4.5vw, 32px); font-weight: 700; color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  transition: transform .1s; text-shadow: 0 2px 0 rgba(0, 0, 0, .15);
+}
+.tarjeta .emoji { font-size: 1.9em; text-shadow: none; }
+.t1 { background: var(--c1); } .t2 { background: var(--c2); } .t3 { background: var(--c3); } .t4 { background: var(--c4); }
+.tarjeta.destacada { outline: 6px solid var(--tarjeta); outline-offset: -6px; }
+.tarjeta:active, .ficha:active, .btn-redondo:active, .btn-letra:active, .perfil > button.entrar:active, .btn-principal:active { transform: translateY(4px) scale(.97); }
+.nivel-caja { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.nivel-texto { margin: 0; font-size: 18px; opacity: .8; text-align: center; }
+#niveles .chip { font-size: 18px; font-weight: 600; }
+
+/* Trazar */
+.rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px; width: 100%; max-width: 980px; }
+.rejilla button { aspect-ratio: 1; border-radius: 18px; background: var(--tarjeta); box-shadow: var(--sombra); font-size: 34px; font-weight: 700; }
+.rejilla-minus button { font-size: 40px; }
+@media (min-width: 900px) { .rejilla { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); } } /* 27 letras: 14 + 13, sin una sola abajo */
+/* A E I O U / M P L S T... en filas de 5; minmax(0) y sin relleno: en 320 px las minúsculas (40 px) no ensanchan la columna */
+@media (max-width: 480px) { .rejilla { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; } .rejilla button { padding: 0; } }
+.rejilla button.hecho { background: color-mix(in srgb, var(--acento) 22%, var(--tarjeta)); }
+.btn-redondo { width: 64px; height: 64px; border-radius: 50%; background: var(--tarjeta); box-shadow: var(--sombra); font-size: 28px; flex: none; }
+.controles { display: flex; gap: 16px; }
+.vista-trazar { justify-content: center; }
+.lienzo-caja { width: min(100%, 68vh, 600px); aspect-ratio: 1; max-width: 100%; background: var(--tarjeta); border-radius: 32px; box-shadow: var(--sombra); touch-action: none; }
+#lienzo { width: 100%; height: 100%; display: block; touch-action: none; }
+
+/* Juegos de los mayores */
+.escena { display: flex; flex-direction: column; align-items: center; gap: 12px; min-height: 180px; justify-content: center; }
+.dibujo { font-size: clamp(90px, 22vw, 160px); line-height: 1; }
+.huecos { display: flex; gap: 10px; }
+.hueco { min-width: 84px; height: 84px; border-radius: 20px; border: 4px dashed color-mix(in srgb, var(--tinta) 30%, transparent); display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; }
+.hueco.lleno { border-style: solid; border-color: var(--ok); background: color-mix(in srgb, var(--ok) 20%, var(--tarjeta)); }
+.opciones { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+.ficha { position: relative; min-width: 110px; height: 110px; padding: 0 18px; border-radius: 26px; background: var(--tarjeta); box-shadow: var(--sombra); font-size: 56px; font-weight: 700; transition: transform .1s; }
+.ficha .oir { position: absolute; right: -10px; top: -10px; width: 42px; height: 42px; border-radius: 50%; background: var(--c3); color: #fff; font-size: 18px; box-shadow: var(--sombra); display: flex; align-items: center; justify-content: center; }
+.ficha.pareja { font-size: 52px; letter-spacing: .02em; } /* "Mm" */
+.ficha.minus { font-size: 72px; padding-bottom: 14px; } /* una minúscula suelta: igual de grande y centrada que una mayúscula */
+.ficha.bien { background: var(--ok); color: #fff; }
+.ficha.mal { animation: temblar .4s; }
+.ficha.usada { visibility: hidden; }
+@keyframes temblar { 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-5px); } }
+
+#fiesta { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+#fiesta span { position: absolute; font-size: 34px; animation: caer 1.6s ease-in forwards; }
+@keyframes caer { from { transform: translateY(-10vh) rotate(0); opacity: 1; } to { transform: translateY(110vh) rotate(540deg); opacity: .8; } }
+@media (prefers-reduced-motion: reduce) { #fiesta span, #deco span { animation: none; } #fiesta span { display: none; } }
+
+/* Menú de peques: Trazar grande arriba */
+.tarjeta.ancha { grid-column: 1 / -1; aspect-ratio: auto; min-height: 170px; flex-direction: row; gap: 18px; font-size: clamp(30px, 6vw, 44px); }
+.tarjeta.ancha .emoji { font-size: 1.6em; }
+.juegos.peques { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.juegos.peques .tarjeta:not(.ancha) { font-size: clamp(17px, 3.6vw, 28px); }
+
+/* Barra de modos (Sílabas: Buscar / Escribir, con o sin guía) */
+.modos { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.modos .chip { font-size: 18px; font-weight: 600; height: 48px; }
+.modos .separador { width: 12px; }
+
+/* Escritura de sílabas: un recuadro por letra */
+.cuaderno { display: flex; gap: 10px; justify-content: center; width: 100%; }
+.cuaderno .lienzo-caja { width: min(46vw, 46vh, 340px); border: 4px solid transparent; transition: border-color .2s, opacity .2s; }
+.cuaderno .lienzo-caja.activa { border-color: var(--acento); }
+.cuaderno .lienzo-caja.espera canvas { opacity: .6; }
+.cuaderno canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+
+/* Contar */
+.monton { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 620px; }
+.cosa {
+  position: relative; width: clamp(76px, 18vw, 110px); aspect-ratio: 1; border-radius: 26px;
+  background: var(--tarjeta); box-shadow: var(--sombra); font-size: clamp(46px, 11vw, 70px);
+  display: grid; place-items: center; transition: transform .15s;
+}
+.cosa.contada { transform: scale(.92); background: color-mix(in srgb, var(--acento) 18%, var(--tarjeta)); }
+.cosa .num {
+  position: absolute; top: -10px; right: -10px; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--acento); color: #fff; font-size: 22px; font-weight: 700; display: grid; place-items: center;
+}
+
+/* Colores */
+.color { width: clamp(96px, 24vw, 150px); aspect-ratio: 1; border-radius: 50% 46% 52% 44% / 48% 54% 44% 50%; box-shadow: var(--sombra); border: 6px solid var(--tarjeta); }
+.color.bien { outline: 6px solid var(--ok); outline-offset: 4px; }
+.color.mal { animation: temblar .4s; }
+.bote { font-size: clamp(90px, 22vw, 150px); line-height: 1; }
+
+/* ---------- Tema Bloques ⛏️ (estilo pixelado, sin marcas) ---------- */
+:root.tema-bloques { --letra: 'Pixelify Sans', 'Fredoka', ui-monospace, monospace; --sombra: 0 6px 0 rgba(0, 0, 0, .35); }
+:root.tema-bloques *, :root.tema-bloques *::before, :root.tema-bloques *::after { border-radius: 0 !important; }
+:root.tema-bloques body { background: linear-gradient(var(--fondo), #d8f0ff 70%); }
+:root.tema-bloques #deco::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, .14) 0 3px, transparent 3px 32px),
+    linear-gradient(#6cc04a 0 10px, #4f9a32 10px 18px, #8a5a36 18px 40px, #75492b 40px);
+}
+:root.tema-bloques #deco span { opacity: .3; }
+:root.tema-bloques :is(.tarjeta, .btn-principal, .ficha, .rejilla button, .btn-redondo, .btn-letra, .estrellas, .perfil > button.entrar, .cosa, .lienzo-caja, .ficha-perfil, .avatar-mini) {
+  box-shadow: inset -6px -6px 0 rgba(0, 0, 0, .28), inset 6px 6px 0 rgba(255, 255, 255, .32), 0 6px 0 rgba(0, 0, 0, .35);
+  border: 3px solid #1e1e1e;
+}
+:root.tema-bloques .chip { border-color: #1e1e1e; }
+:root.tema-bloques .chip.activo { background: var(--c1); color: #fff; }
+:root.tema-bloques .tarjeta { text-shadow: 3px 3px 0 rgba(0, 0, 0, .35); }
+:root.tema-bloques .color { border-color: #1e1e1e; }
+/* Los títulos de Trazar pueden caer sobre el suelo de tierra (fijo abajo): con fondo claro se leen */
+:root.tema-bloques .vista:not(.vista-batalla) h2 { background: rgba(255, 255, 255, .8); padding: 0 8px; }
+/* Escribir: el borde de bloque es negro en los dos recuadros; el activo se marca por fuera */
+:root.tema-bloques .cuaderno .lienzo-caja.activa { outline: 4px solid var(--acento); outline-offset: 2px; }
+/* Las letras para leer, en letra redonda: en la pixelada la f es igual que la F y la j no tiene punto */
+:root.tema-bloques :is([data-letra], .rejilla button, .btn-letra) { font-family: 'Fredoka', 'Nunito', system-ui, sans-serif; }
+
+/* Vídeo de presentación */
+.btn-video { font-size: 18px; font-weight: 600; height: 52px; }
+.intro { position: fixed; inset: 0; z-index: 10; background: #000; display: grid; place-items: center; }
+.intro video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.btn-saltar {
+  position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px;
+  background: rgba(255, 255, 255, .92); color: #222; font-size: 20px; font-weight: 700;
+  padding: 10px 20px; border-radius: 999px; box-shadow: 0 4px 0 rgba(0, 0, 0, .3);
+}
+
+/* ---------- Días de la semana ---------- */
+.tarjeta-dias { background: linear-gradient(90deg, #e53935, #fb8c00, #f9c80e, #43a047, #1e88e5, #8e24aa, #f06292); }
+.tren { display: flex; flex-wrap: wrap; gap: 8px 6px; justify-content: center; align-items: flex-end; max-width: 980px; }
+.tren.arranca { animation: arrancar 1.6s ease-in 1.2s; }
+@keyframes arrancar { 50% { transform: translateX(-12px); } 100% { transform: translateX(110vw); } }
+.locomotora { font-size: clamp(54px, 11vw, 84px); line-height: 1; transform: scaleX(-1); }
+.vagon {
+  position: relative; width: clamp(78px, 12vw, 116px); aspect-ratio: 1 / .95; padding: 6px 4px 14px;
+  border-radius: 14px; background: var(--c); color: #fff; box-shadow: var(--sombra);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  font-weight: 700; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); transition: transform .15s;
+}
+.vagon .ico { font-size: clamp(28px, 5vw, 42px); line-height: 1; text-shadow: none; }
+.vagon .nom { font-size: clamp(13px, 2.2vw, 18px); }
+.vagon .nom.caps { font-size: clamp(12px, 1.9vw, 18px); letter-spacing: -.02em; } /* "MIÉRCOLES" cabe en el vagón */
+.vagon .ruedas { position: absolute; bottom: -8px; left: 14%; right: 14%; height: 16px;
+  background: radial-gradient(circle at 8px 8px, #333 6px, #888 7px, transparent 8px) left / 16px 16px no-repeat,
+              radial-gradient(circle at 8px 8px, #333 6px, #888 7px, transparent 8px) right / 16px 16px no-repeat; }
+.vagon .oir { position: absolute; right: -8px; top: -8px; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--tarjeta); color: var(--tinta); font-size: 16px; box-shadow: var(--sombra); display: grid; place-items: center; text-shadow: none; }
+.vagon.grande { width: clamp(150px, 30vw, 220px); }
+.vagon.grande .ico { font-size: clamp(56px, 11vw, 84px); }
+.vagon.grande .nom { font-size: clamp(22px, 4vw, 32px); }
+.vagon.grande .nom.caps { font-size: clamp(19px, 3.4vw, 30px); letter-spacing: -.02em; }
+.vagon.usada { visibility: hidden; }
+.vagon.bien { outline: 5px solid var(--ok); outline-offset: 3px; transform: translateY(-6px); }
+.vagon.mal { animation: temblar .4s; }
+.vagon.puesto { animation: encajar .3s ease-out; }
+@keyframes encajar { from { transform: translateY(-30px) scale(1.1); } }
+.hueco-vagon { background: transparent; border: 4px dashed color-mix(in srgb, var(--tinta) 30%, transparent); box-shadow: none;
+  color: var(--tinta); font-size: 40px; text-shadow: none; }
+.hueco-vagon.siguiente { border-color: var(--acento); animation: latir 1s ease-in-out infinite; }
+@keyframes latir { 50% { transform: scale(1.06); } }
+.hoy { display: flex; gap: 28px; align-items: flex-end; justify-content: center; flex-wrap: wrap; }
+.hoy-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.hoy-col b { font-size: 22px; letter-spacing: .08em; }
+.hoy-col.manana { opacity: .8; }
+.etiqueta-cole { font-size: 20px; font-weight: 700; background: var(--tarjeta); padding: 6px 14px; border-radius: 999px; box-shadow: var(--sombra); }
+.respuesta-cole { width: min(40vw, 220px); aspect-ratio: 1.3; }
+.respuesta-cole.cole { background: #1e88e5; } .respuesta-cole.finde { background: #8e24aa; }
+.respuesta-cole.bien { outline: 6px solid var(--ok); outline-offset: 4px; }
+:root.tema-bloques .vagon { border: 3px solid #1e1e1e; box-shadow: inset -5px -5px 0 rgba(0,0,0,.25), inset 5px 5px 0 rgba(255,255,255,.3), 0 6px 0 rgba(0,0,0,.35); }
+:root.tema-bloques .hueco-vagon { border-style: dashed; box-shadow: none; }
+
+/* ---------- Batalla de bloques (minijuego que se desbloquea con estrellas) ---------- */
+/* Tarjeta del menú: un bloque de hierba, con el héroe y un creeper pintados con los sprites */
+.tarjeta-batalla {
+  position: relative; overflow: hidden; font-family: 'Pixelify Sans', var(--letra);
+  background:
+    linear-gradient(#6cc04a 0 16px, #4f9a32 16px 24px, transparent 24px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, .1) 0 4px, transparent 4px 28px),
+    linear-gradient(#9a6a40, #75492b);
+}
+.tarjeta-batalla .tj-texto { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tarjeta-batalla .tj-nombre { display: flex; align-items: center; gap: 10px; }
+.tarjeta-batalla .insignia {
+  font-family: var(--letra); font-size: clamp(15px, 2.6vw, 20px); font-weight: 700; line-height: 1.1;
+  background: rgba(0, 0, 0, .38); padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+}
+.tarjeta-batalla.libre .insignia { background: #f9c80e; color: #3a2500; text-shadow: none; }
+.tarjeta-batalla.bloqueada .tj-sprite { filter: grayscale(.6) brightness(.85); }
+.tarjeta-batalla.bloqueada .insignia { background: rgba(30, 20, 10, .62); }
+/* El tamaño lo pone app.js (escala entera: píxeles nítidos) */
+.tj-sprite { image-rendering: pixelated; flex: none; filter: drop-shadow(3px 4px 0 rgba(0, 0, 0, .3)); }
+@media (max-width: 380px) { .tarjeta-batalla.ancha { gap: 8px; } }
+/* El premio va al final del menú, debajo del nivel de los juegos de aprender: algo más bajita para que quepa */
+.juegos-premio .tarjeta-batalla.ancha { min-height: 140px; }
+/* Pantallas no muy altas (tablet en vertical, Safari de iPad apaisado, móviles): la tarjeta, más baja y con la
+   insignia al lado del nombre, y "Días de la semana" algo más baja: así se ve entera sin desplazar */
+@media (max-height: 1100px) {
+  #juegos:not(.peques) .tarjeta.ancha { min-height: 130px; }
+  .juegos-premio .tarjeta-batalla.ancha { min-height: 96px; padding-block: 8px; }
+  .tarjeta-batalla .tj-texto { flex-direction: row; flex-wrap: wrap; justify-content: center; column-gap: 14px; row-gap: 4px; }
+}
+
+/* Antes de jugar: héroe y nivel */
+.vista-minijuegos { gap: 14px; }
+.mj-cabecera { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.mj-titulo { align-self: center; margin: 0; font-family: 'Pixelify Sans', var(--letra); font-size: clamp(28px, 6vw, 42px); }
+.mj-estado { margin: 0; font-size: clamp(18px, 3.6vw, 24px); font-weight: 700; text-wrap: balance; }
+.mj-progreso { margin: 0; font-size: 26px; letter-spacing: 4px; }
+.mj-progreso .apagada { filter: grayscale(1); opacity: .35; }
+.mj-caja { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; max-width: 620px; }
+.mj-rotulo { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.mj-heroes { display: flex; gap: 18px; justify-content: center; }
+.mj-heroe {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 18px 10px; min-width: 120px;
+  border-radius: 24px; background: var(--tarjeta); box-shadow: var(--sombra); border: 4px solid transparent;
+  font-size: 22px; font-weight: 700; transition: transform .1s;
+}
+.mj-heroe canvas { display: block; image-rendering: pixelated; }
+.mj-heroe.activo { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 16%, var(--tarjeta)); }
+.mj-heroe.activo canvas { animation: mj-saltito 1.2s ease-in-out infinite; }
+@keyframes mj-saltito { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
+.mj-heroe:active { transform: translateY(4px) scale(.97); }
+/* Nivel: ◀ N ▶ (una sola fila, quepan los niveles que quepan) */
+.mj-niveles { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.mj-flecha { font-size: 24px; min-width: 64px; }
+.mj-flecha:disabled { opacity: .45; cursor: default; }
+.mj-nivel-num { min-width: 2ch; font-family: 'Pixelify Sans', var(--letra); font-size: 44px; font-weight: 700; line-height: 1; text-align: center; font-variant-numeric: tabular-nums; }
+.mj-jugar { font-size: 28px; padding: 16px 44px; }
+.mj-jugar:disabled { background: color-mix(in srgb, var(--tinta) 30%, var(--fondo)); color: var(--tinta); box-shadow: none; cursor: default; font-size: 22px; }
+.btn-padres {
+  align-self: flex-end; margin-top: auto; font-size: 15px; font-weight: 600; padding: 8px 14px; border-radius: 999px;
+  background: color-mix(in srgb, var(--tarjeta) 70%, transparent); color: var(--tinta); opacity: .75;
+  border: 2px solid color-mix(in srgb, var(--tinta) 18%, transparent);
+}
+@media (prefers-reduced-motion: reduce) { .mj-heroe.activo canvas { animation: none; } }
+/* Apaisado muy bajo (iPhone SE de 1.ª generación, 568x320): sin rótulos y con el botón en una línea */
+@media (max-height: 340px) and (min-width: 540px) {
+  .vista-minijuegos .mj-rotulo { display: none; }
+  .vista-minijuegos .mj-titulo { font-size: 24px; }
+  .vista-minijuegos .mj-jugar { white-space: nowrap; font-size: 20px; padding: 8px 20px; }
+}
+
+/* ¿Contra quién? Monstruos | 1 contra 1 */
+.mj-contra { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.mj-modo {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 64px; padding: 6px 20px; border-radius: 22px;
+  background: var(--tarjeta); box-shadow: var(--sombra); border: 4px solid transparent; font-size: 22px; font-weight: 700; white-space: nowrap; transition: transform .1s;
+}
+.mj-modo .emoji { font-size: 32px; line-height: 1; }
+.mj-modo.activo { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 16%, var(--tarjeta)); }
+.mj-modo:active { transform: translateY(4px) scale(.97); }
+.mj-lado { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; max-width: 620px; }
+/* 1 contra 1: En esta tablet · Crear partida · Unirme (tarjetas de colores, con el dibujo grande) */
+.mj-dbotones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; width: 100%; }
+.mj-dbtn {
+  position: relative; min-height: 104px; padding: 10px 8px; border-radius: 26px; box-shadow: var(--sombra); color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  font-size: clamp(18px, 2.6vw, 22px); font-weight: 700; line-height: 1.1; text-align: center; text-shadow: 0 2px 0 rgba(0, 0, 0, .2); transition: transform .1s;
+}
+.mj-dbotones.solo { grid-template-columns: minmax(0, 240px); justify-content: center; }
+.mj-dbtn .emoji { font-size: 40px; line-height: 1; text-shadow: none; }
+.mj-dbtn-tablet { background: var(--c3); } .mj-dbtn-crear { background: var(--c2); } .mj-dbtn-unirme { background: var(--c1); }
+.mj-dbtn:active { transform: translateY(4px) scale(.97); }
+.mj-dbtn:disabled { filter: grayscale(.75); opacity: .55; cursor: default; transform: none; }
+.mj-dbtn.bloqueado::after {
+  content: '🔒'; position: absolute; top: -10px; right: -8px; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--tarjeta); box-shadow: var(--sombra); display: grid; place-items: center; font-size: 20px; text-shadow: none;
+}
+.mj-falta { margin: 0; font-size: 22px; font-weight: 700; padding: 8px 20px; border-radius: 999px; background: color-mix(in srgb, var(--tinta) 12%, transparent); }
+.mj-sinred { margin: 0; font-size: 17px; font-weight: 600; opacity: .8; text-align: center; text-wrap: balance; }
+/* Móvil en vertical: Monstruos | 1 contra 1 en una fila; los tres del 1 contra 1, también (más bajitos) */
+@media (max-width: 480px) {
+  .mj-contra { flex-wrap: nowrap; gap: 10px; width: 100%; max-width: 400px; }
+  .mj-modo { flex: 1 1 0; min-width: 0; justify-content: center; gap: 6px; min-height: 56px; padding: 4px 8px; font-size: 18px; }
+  .mj-modo .emoji { font-size: 26px; }
+  .mj-dbotones { gap: 10px; }
+  .mj-dbtn { min-height: 84px; padding: 8px 4px; gap: 2px; font-size: 16px; border-radius: 20px; }
+  .mj-dbtn .emoji { font-size: 30px; }
+  .mj-dbtn.bloqueado::after { width: 32px; height: 32px; font-size: 16px; top: -8px; right: -6px; }
+  .mj-falta { font-size: 19px; padding: 6px 16px; }
+}
+/* Móvil en vertical no muy alto (con las barras del navegador): sin rótulos, para que todo se vea sin desplazar */
+@media (max-width: 480px) and (max-height: 760px) {
+  .vista-minijuegos .mj-rotulo { display: none; }
+  .vista-minijuegos { gap: 12px; }
+}
+
+/* Apaisado (móvil, y tablet no muy alta como el iPad en Safari): héroes a un lado; contra quién y niveles (o el
+   1 contra 1) al otro. Lo primero que tiene que verse entero es "¡A jugar!"; "Padres" va aparte, en la esquina */
+@media (max-height: 520px) and (min-width: 540px), (min-width: 900px) and (max-height: 820px) {
+  .vista-minijuegos {
+    display: grid; grid-template-columns: auto auto; grid-template-areas: "cab cab" "heroes contra" "heroes lado";
+    justify-content: center; align-content: start; column-gap: 32px; row-gap: 8px; padding-top: 0;
+  }
+  .vista-minijuegos .mj-cabecera { grid-area: cab; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: baseline; column-gap: 16px; }
+  .vista-minijuegos .mj-caja-heroes { grid-area: heroes; align-self: center; }
+  .vista-minijuegos .mj-caja-contra { grid-area: contra; }
+  .vista-minijuegos .mj-lado { grid-area: lado; }
+  .btn-padres {
+    position: fixed; z-index: 2; margin: 0;
+    right: calc(8px + env(safe-area-inset-right, 0px)); bottom: calc(5px + env(safe-area-inset-bottom, 0px));
+  }
+}
+/* Solo el móvil apaisado: todo algo más pequeño */
+@media (max-height: 520px) and (min-width: 540px) {
+  .mj-titulo { font-size: 30px; }
+  .vista-minijuegos { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); } /* ("Padres" va fijo en la esquina) */
+  .vista-minijuegos .mj-lado { gap: 8px; }
+  .vista-minijuegos .mj-caja-contra .mj-rotulo { display: none; }
+  /* Monstruos | 1 contra 1 en una fila; sin partidas, lo que falta ya está arriba (con las estrellas): sin el título */
+  .mj-contra { flex-wrap: nowrap; }
+  .vista-minijuegos:has(#mj-progreso:not([hidden])) .mj-titulo { display: none; }
+  .mj-modo { min-height: 48px; padding: 4px 14px; font-size: 19px; }
+  .mj-modo .emoji { font-size: 26px; }
+  .mj-dbotones { gap: 10px; }
+  .mj-dbtn { gap: 2px; min-height: 84px; min-width: 128px; padding: 6px; font-size: 17px; }
+  .mj-dbtn .emoji { font-size: 30px; }
+  .mj-falta { font-size: 18px; padding: 4px 14px; }
+  .mj-heroe { padding: 8px 14px 6px; min-width: 100px; font-size: 19px; }
+  .mj-nivel-num { font-size: 38px; }
+  .mj-jugar { align-self: center; justify-self: center; font-size: 25px; padding: 12px 36px; }
+  .btn-padres { font-size: 13px; padding: 4px 10px; }
+}
+/* Móvil apaisado estrecho (540-639 de ancho): más justo aún, si no la rejilla centrada se sale por los dos lados */
+@media (max-height: 520px) and (min-width: 540px) and (max-width: 639px) {
+  .vista-minijuegos { column-gap: 14px; }
+  .mj-heroes { gap: 8px; }
+  .mj-heroe { min-width: 84px; padding: 6px 8px 4px; font-size: 17px; }
+  .mj-modo { gap: 4px; padding: 4px 8px; font-size: 16px; }
+  .mj-modo .emoji { font-size: 22px; }
+  .mj-dbtn { min-width: 0; flex: 1 1 0; font-size: 15px; }
+  .mj-jugar { font-size: 22px; padding: 10px 26px; }
+}
+
+/* 1 contra 1 en esta tablet: los dos héroes, cada uno con su interruptor de ayuda */
+.vista-duelo { justify-content: center; gap: 18px; }
+.dl-lados { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 4vw, 40px); max-width: 100%; }
+.dl-lado { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; }
+.dl-heroe {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 18px 10px; min-width: 120px;
+  border-radius: 24px; background: var(--tarjeta); box-shadow: var(--sombra); font-size: 22px; font-weight: 700;
+}
+.dl-heroe canvas { display: block; image-rendering: pixelated; animation: mj-saltito 1.2s ease-in-out infinite; }
+.dl-tu {
+  position: absolute; top: -14px; left: -14px; width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center; font-size: 26px; background: var(--tarjeta); box-shadow: var(--sombra); border: 3px solid var(--acento);
+}
+.dl-tu img { width: 100%; height: 100%; object-fit: cover; }
+.dl-contra { font-size: clamp(30px, 7vw, 56px); line-height: 1; }
+.dl-ayuda {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; max-width: 100%; min-height: 56px;
+  padding: 6px 14px; border-radius: 22px; background: var(--tarjeta); box-shadow: var(--sombra); border: 3px solid var(--guia);
+  font-size: 20px; font-weight: 700; transition: transform .1s;
+}
+.dl-ayuda:active { transform: translateY(3px); }
+.dl-interruptor { position: relative; flex: none; width: 52px; height: 30px; border-radius: 999px; background: color-mix(in srgb, var(--tinta) 28%, var(--fondo)); transition: background-color .15s; }
+.dl-interruptor::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 0 rgba(0, 0, 0, .25); transition: transform .15s;
+}
+.dl-ayuda[aria-pressed="true"] { border-color: var(--ok); }
+.dl-ayuda[aria-pressed="true"] .dl-interruptor { background: var(--ok); }
+.dl-ayuda[aria-pressed="true"] .dl-interruptor::after { transform: translateX(22px); }
+@media (prefers-reduced-motion: reduce) { .dl-heroe canvas { animation: none; } }
+/* Pantallas bajas: sin título (ya se ve qué es) y ¡A jugar! al lado */
+@media (max-height: 520px) and (min-width: 540px) {
+  .vista-duelo { flex-direction: row; gap: 32px; padding-top: 0; }
+  .vista-duelo .mj-titulo { display: none; }
+  .dl-heroe { padding: 8px 14px 6px; min-width: 100px; font-size: 19px; }
+  .dl-ayuda { min-height: 50px; font-size: 18px; }
+}
+
+/* 1 contra 1 en red: el código (4 animales), los huecos para teclearlo y los 12 animales */
+.vista-sala { justify-content: center; }
+.sala-crear, .sala-unirme { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; max-width: 640px; }
+.sala-codigo { display: flex; gap: clamp(8px, 2.5vw, 16px); justify-content: center; }
+.sala-animal {
+  width: clamp(64px, 19vw, 116px); aspect-ratio: 1; border-radius: 24px; background: var(--tarjeta); box-shadow: var(--sombra);
+  display: grid; place-items: center; font-size: clamp(40px, 12vw, 72px); line-height: 1; border: 4px solid transparent;
+}
+.sala-animal.vacio { background: transparent; box-shadow: none; border: 4px dashed color-mix(in srgb, var(--tinta) 30%, transparent); }
+.sala-crear .sala-animal.vacio, .sala-animal.uniendo { animation: latir 1s ease-in-out infinite; }
+.sala-animal.siguiente { border-color: var(--acento); animation: latir 1s ease-in-out infinite; }
+.sala-animal.malo { background: color-mix(in srgb, #e53935 22%, var(--tarjeta)); border-color: #e53935; }
+.sala-animal.apagado { opacity: .35; filter: grayscale(1); }
+.sala-huecos.mal { animation: temblar .4s; }
+.sala-huecos .sala-animal { width: clamp(60px, 17vw, 96px); font-size: clamp(36px, 10vw, 60px); }
+.sala-texto { margin: 0; max-width: 560px; min-height: 1.25em; font-size: clamp(19px, 3.4vw, 26px); font-weight: 700; line-height: 1.25; text-align: center; text-wrap: balance; }
+.sala-error { color: color-mix(in srgb, #d32f2f 80%, var(--tinta)); }
+.sala-espera { margin: 0; font-size: 22px; font-weight: 700; opacity: .8; }
+.puntos i { font-style: normal; animation: parpadeo 1.2s infinite; }
+.puntos i:nth-child(2) { animation-delay: .2s; }
+.puntos i:nth-child(3) { animation-delay: .4s; }
+@keyframes parpadeo { 0%, 100% { opacity: .15; } 40% { opacity: 1; } }
+.sala-botones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.sala-cancelar { font-size: 21px; font-weight: 700; padding: 12px 28px; min-height: 56px; border-radius: 999px; background: var(--tarjeta); box-shadow: var(--sombra); }
+.sala-fila { display: flex; align-items: center; gap: clamp(8px, 2.5vw, 16px); }
+.sala-borrar { flex: none; width: 64px; height: 64px; border-radius: 50%; background: var(--tarjeta); box-shadow: var(--sombra); font-size: 30px; font-family: 'Fredoka', system-ui, sans-serif; }
+.sala-borrar:disabled { opacity: .4; cursor: default; }
+.sala-animales { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: min(100%, 440px); }
+.sala-animales button {
+  aspect-ratio: 1; min-width: 0; padding: 0; overflow: hidden; border-radius: 22px; background: var(--tarjeta); box-shadow: var(--sombra);
+  font-size: clamp(30px, 9vw, 52px); line-height: 1; transition: transform .1s;
+}
+.sala-animales button:disabled { opacity: .45; cursor: default; }
+.sala-animales button:active:not(:disabled), .sala-borrar:active:not(:disabled), .sala-cancelar:active { transform: translateY(4px) scale(.95); }
+.sala-dentro { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+/* Los animales del código, siempre en color (en algunos sistemas una letra en blanco y negro gana a la de los
+   emojis): los dos aparatos tienen que poder comparar los mismos dibujos */
+.sala-animal, .sala-animales button { font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif; }
+@media (prefers-reduced-motion: reduce) { .sala-animal, .puntos i { animation: none !important; } }
+/* Pantallas bajas: el código y los huecos a la izquierda, los animales a la derecha */
+@media (max-height: 520px) and (min-width: 540px) {
+  .vista-sala { padding-top: 0; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .sala-crear { gap: 8px; }
+  .sala-crear .sala-animal { width: 76px; font-size: 48px; }
+  .sala-unirme { display: grid; grid-template-columns: auto auto; grid-template-areas: "fila animales" "error animales" "dentro animales";
+    align-items: center; justify-content: center; column-gap: 28px; row-gap: 10px; max-width: none; }
+  .sala-fila { grid-area: fila; }
+  .sala-error { grid-area: error; max-width: 340px; font-size: 19px; }
+  .sala-animales { grid-area: animales; width: min(42vw, 320px); gap: 8px; }
+  .sala-animales button { font-size: clamp(26px, 9vh, 46px); }
+  .sala-dentro { grid-area: dentro; }
+  .sala-huecos .sala-animal { width: 62px; font-size: 38px; }
+  .sala-borrar { width: 56px; height: 56px; }
+}
+/* Apaisado muy bajo (iPhone SE de 1.ª generación, 568x320): todo más justo para que quepa sin desplazar */
+@media (max-height: 340px) and (min-width: 540px) {
+  .vista-minijuegos { column-gap: 20px; row-gap: 4px; }
+  .mj-heroes { gap: 12px; }
+  .mj-heroe { min-width: 84px; padding: 6px 10px 4px; font-size: 17px; }
+  .mj-contra { flex-wrap: nowrap; gap: 8px; }
+  .mj-modo { min-height: 44px; padding: 2px 8px; gap: 6px; font-size: 15px; }
+  .mj-modo .emoji { font-size: 22px; }
+  .mj-dbtn { min-width: 0; min-height: 62px; font-size: 14px; }
+  .mj-dbtn .emoji { font-size: 22px; }
+  /* Sin partidas, lo que falta ya está arriba (con las estrellas): sin el título ni la línea de debajo, cabe */
+  .vista-minijuegos:has(#mj-progreso:not([hidden])) .mj-titulo, .vista-minijuegos .mj-falta { display: none; }
+  .vista-sala .mj-rotulo { display: none; }
+  .sala-crear .sala-animal { width: 58px; font-size: 36px; }
+  .sala-texto { font-size: 16px; }
+  .sala-espera { font-size: 17px; }
+  .sala-cancelar { min-height: 44px; padding: 6px 20px; font-size: 18px; }
+  .sala-codigo, .sala-fila { gap: 6px; }
+  .sala-huecos .sala-animal { width: 46px; font-size: 28px; border-width: 3px; }
+  .sala-borrar { width: 46px; height: 46px; font-size: 24px; }
+  .dl-ayuda { min-height: 44px; padding: 2px 10px; font-size: 16px; }
+}
+
+
+/* La partida: a pantalla completa; de la barra de arriba solo queda ⬅️, flotando encima */
+.vista-batalla { position: fixed; inset: 0; z-index: 3; padding: 0; gap: 0; background: #22180f; }
+.batalla-caja {
+  position: absolute; top: env(safe-area-inset-top, 0px); bottom: 0;
+  left: env(safe-area-inset-left, 0px); right: env(safe-area-inset-right, 0px);
+}
+body.en-batalla { overflow: hidden; }
+body.en-batalla .barra {
+  position: fixed; top: 0; left: 0; z-index: 7; pointer-events: none; background: none;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) 0 0 calc(8px + env(safe-area-inset-left, 0px));
+}
+body.en-batalla .barra > :not(#btn-atras) { display: none !important; }
+body.en-batalla #btn-atras { pointer-events: auto; width: 52px; height: 52px; font-size: 24px; }
+body.en-batalla #deco { display: none; }
+.aviso-salir { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .5); }
+.aviso-caja {
+  background: #c69c6d; color: #2a1a0a; border: 4px solid #3b2a1a; border-radius: 8px; padding: 20px 22px; text-align: center;
+  box-shadow: inset -6px -7px 0 rgba(0, 0, 0, .25), inset 6px 6px 0 rgba(255, 255, 255, .3); max-width: 480px; width: 100%;
+  font-family: 'Pixelify Sans', var(--letra);
+}
+.aviso-caja p { margin: 0 0 16px; font-size: clamp(24px, 5vw, 34px); font-weight: 700; }
+.aviso-botones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.aviso-botones button {
+  font-size: 21px; font-weight: 700; padding: 12px 18px; min-height: 60px; border: 3px solid #1b1b1b; border-radius: 10px; color: #fff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, .45); box-shadow: inset -3px -4px 0 rgba(0, 0, 0, .3), inset 3px 3px 0 rgba(255, 255, 255, .35), 0 4px 0 #1b1b1b;
+}
+.aviso-si { background: linear-gradient(#a3a3a3, #6c6c6c); }
+.aviso-no { background: linear-gradient(#7ccb45, #4b8b20); }
+
+/* Para padres: candado con una multiplicación y teclado en pantalla */
+.padres { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .55); overflow: auto; }
+.padres-caja {
+  position: relative; width: 100%; max-width: 420px; background: var(--tarjeta); color: var(--tinta); border-radius: 28px; box-shadow: var(--sombra);
+  padding: 18px 20px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+}
+.padres-caja h2 { align-self: center; margin: 0; font-size: 24px; }
+.padres-candado, .padres-panel { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.padres-texto { margin: 0; font-size: 18px; text-wrap: balance; }
+.padres-texto.mal { color: #d33; font-weight: 700; }
+.padres-cuenta { margin: 0; font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.padres-respuesta {
+  display: inline-block; min-width: 2.2em; padding: 0 8px; border-bottom: 4px solid var(--acento); text-align: center;
+}
+.padres-cuenta.mal { animation: temblar .4s; }
+.teclado { display: grid; grid-template-columns: repeat(3, 76px); gap: 10px; }
+.teclado button {
+  height: 64px; border-radius: 18px; background: var(--fondo); border: 3px solid var(--guia); font-size: 30px; font-weight: 700;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, .12); transition: transform .08s;
+}
+.teclado button:active { transform: translateY(3px); }
+.teclado button:disabled { opacity: .4; transform: none; }
+.teclado .ok { background: var(--ok); border-color: var(--ok); color: #fff; font-size: 24px; }
+.teclado .borrar { font-size: 26px; }
+.padres-botones { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; }
+/* Colores fijos (no los del tema): con texto blanco se leen en todos */
+.padres-botones button { font-size: 22px; font-weight: 700; padding: 14px 18px; border-radius: 999px; background: #2f6fd6; color: #fff; box-shadow: var(--sombra); }
+.padres-botones button[data-regalo="libre"] { background: #23955a; }
+.padres-botones button:active { transform: translateY(3px); }
+.padres-hecho { margin: 0; min-height: 1.3em; font-size: 18px; font-weight: 700; color: color-mix(in srgb, var(--ok) 65%, var(--tinta)); }
+.padres-cerrar {
+  position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px));
+  width: 56px; height: 56px; border-radius: 50%; background: var(--tarjeta); color: var(--tinta); box-shadow: var(--sombra);
+  font-size: 26px; font-weight: 700; z-index: 1;
+}
+/* Pantallas bajas: la cuenta a la izquierda y el teclado a la derecha */
+@media (max-height: 560px) {
+  .padres { padding: 8px 76px 8px 8px; }
+  .padres-caja { max-width: 640px; padding: 12px 16px; gap: 6px; }
+  .padres-caja h2 { font-size: 20px; }
+  .padres-candado { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; column-gap: 20px; row-gap: 4px; align-items: center; }
+  .padres-candado .teclado { grid-column: 2; grid-row: 1 / 3; }
+  .padres-cuenta { font-size: 38px; }
+  .teclado { grid-template-columns: repeat(3, 66px); gap: 7px; }
+  .teclado button { height: 52px; font-size: 26px; }
+  .padres-botones { flex-direction: row; flex-wrap: wrap; justify-content: center; max-width: none; }
+  .padres-botones button { padding: 12px 16px; font-size: 20px; }
+}
+/* Copia en la nube (js/nube.js): debajo de los regalos, más discreta; el código, grande y que se pueda copiar */
+.padres-regalos { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.nube { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding-top: 12px; border-top: 2px solid var(--guia); }
+.padres-regalos[hidden] + .nube { padding-top: 0; border-top: 0; }
+.nube h3 { margin: 0; font-size: 20px; }
+.nube p { margin: 0; text-wrap: balance; }
+.nube-estado { font-size: 16px; }
+.nube-aviso { font-size: 16px; font-weight: 700; color: color-mix(in srgb, var(--ok) 65%, var(--tinta)); }
+.nube-aviso:empty { display: none; }
+.nube-aviso.mal, .nube-error { color: #d33; }
+.nube-nota { font-size: 15px; opacity: .8; }
+.nube-nota:empty { display: none; }
+.nube-botones { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; max-width: 340px; }
+/* Colores fijos, como los de los regalos */
+.nube-azul, .nube-rojo { width: 100%; font-size: 19px; font-weight: 700; padding: 11px 16px; border-radius: 999px; background: #2f6fd6; color: #fff; box-shadow: var(--sombra); }
+.nube-rojo { background: #c62828; }
+.nube-azul:active, .nube-rojo:active { transform: translateY(3px); }
+.nube-texto { font-size: 16px; text-decoration: underline; padding: 6px 8px; opacity: .85; }
+.nube-texto.peligro { color: #d33; opacity: 1; font-weight: 700; }
+.nube button:disabled { opacity: .45; cursor: default; transform: none; }
+.nube-codigo, .nube-form, .nube-pregunta { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.nube-apuntalo { font-size: 26px; font-weight: 700; }
+.nube-palabras {
+  list-style: none; margin: 0; padding: 12px 14px; width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px;
+  font-size: 30px; font-weight: 700; line-height: 1.25; background: var(--fondo); border: 3px dashed var(--acento); border-radius: 18px;
+  user-select: text; -webkit-user-select: text; counter-reset: palabra;
+}
+.nube-palabras li { white-space: nowrap; counter-increment: palabra; }
+.nube-palabras li::before { content: counter(palabra) " "; font-size: 15px; opacity: .55; vertical-align: middle; }
+.nube-form label { font-size: 17px; font-weight: 600; }
+.nube-form input {
+  font: inherit; font-size: 22px; padding: 10px 14px; border-radius: 16px; width: 100%;
+  border: 3px solid var(--guia); background: var(--fondo); color: var(--tinta); user-select: text; -webkit-user-select: text;
+}
+.nube-error { font-size: 16px; font-weight: 700; }
+.nube-error:empty { display: none; }
+.nube-pregunta ul { margin: 0; padding-left: 1.2em; text-align: left; font-size: 17px; font-weight: 700; }
+#nube-pregunta-texto { display: flex; flex-direction: column; gap: 8px; font-size: 17px; }
+@media (max-height: 560px) {
+  .nube-botones { flex-direction: row; flex-wrap: wrap; justify-content: center; max-width: none; }
+  .nube-azul, .nube-rojo { width: auto; }
+  .nube-palabras { font-size: 26px; }
+}
+:root.tema-bloques :is(.mj-heroe, .padres-caja, .teclado button, .padres-cerrar, .btn-padres, .padres-botones button) { border: 3px solid #1e1e1e; }
+:root.tema-bloques .mj-heroe.activo { outline: 4px solid var(--acento); outline-offset: 2px; }
+/* 1 contra 1, en bloques: bordes negros con relieve, como el resto */
+:root.tema-bloques :is(.mj-modo, .mj-dbtn, .dl-heroe, .dl-ayuda, .sala-animal:not(.vacio), .sala-animales button, .sala-borrar, .sala-cancelar) {
+  box-shadow: inset -5px -5px 0 rgba(0, 0, 0, .25), inset 5px 5px 0 rgba(255, 255, 255, .3), 0 6px 0 rgba(0, 0, 0, .35);
+  border: 3px solid #1e1e1e;
+}
+:root.tema-bloques .mj-modo.activo { outline: 4px solid var(--acento); outline-offset: 2px; }
+:root.tema-bloques .mj-dbtn { text-shadow: 3px 3px 0 rgba(0, 0, 0, .35); }
+:root.tema-bloques .dl-ayuda[aria-pressed="true"] { outline: 4px solid var(--ok); outline-offset: 2px; }
+:root.tema-bloques .sala-animal.malo { border-color: #e53935; }
+:root.tema-bloques .sala-animal.siguiente { outline: 4px solid var(--acento); outline-offset: 2px; }
+:root.tema-bloques :is(.sala-texto, .sala-espera, .mj-sinred) { background: rgba(255, 255, 255, .8); padding: 2px 10px; }
+:root.tema-bloques .sala-texto:empty { background: none; }
+
+/* Números claros: en la letra de píxeles el 2 y el 3 se parecen al 8 y el 5 a la S (los niños están
+   aprendiendo los números; y la cuenta de los padres tiene que leerse a la primera) */
+.tarjeta-batalla .insignia, .mj-estado, .mj-nivel-num, .mj-jugar:disabled, .padres-caja, .estrellas, .mj-falta {
+  font-family: 'Fredoka', 'Nunito', system-ui, sans-serif;
+}

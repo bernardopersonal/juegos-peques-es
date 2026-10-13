@@ -1,0 +1,75 @@
+name: Hacer vídeo explicativo
+
+# Se lanza a mano: Actions > "Hacer vídeo explicativo" > Run workflow.
+# "cual": presentacion (scripts/hacer-video.mjs → juegos-peques.mp4) o
+#         dias (scripts/hacer-video-dias.mjs → dias.mp4; la cantinela usa los audios del juego).
+# La narración usa ElevenLabs (unos 600 / 420 caracteres la primera vez; luego se reutiliza).
+# El vídeo queda en la rama "video" (junto a los que ya hubiera) y como descarga de la ejecución.
+on:
+  workflow_dispatch:
+    inputs:
+      cual:
+        description: "Qué vídeo hacer"
+        type: choice
+        options:
+          - presentacion
+          - dias
+        default: presentacion
+      sin_voz:
+        description: "Prueba sin narración (no gasta créditos)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      ELEVENLABS_VOICE_ID: ${{ vars.ELEVENLABS_VOICE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar ffmpeg, Playwright y fuentes emoji
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-color-emoji > /dev/null
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Montar vídeo
+        run: |
+          if [ "${{ inputs.cual }}" = "dias" ]; then
+            node scripts/hacer-video-dias.mjs ${{ inputs.sin_voz && '--sin-voz' || '' }}
+          else
+            node scripts/hacer-video.mjs ${{ inputs.sin_voz && '--sin-voz' || '' }}
+          fi
+      - name: Subir vídeo para descargar
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-${{ inputs.cual || 'presentacion' }}
+          path: video/*.mp4
+          retention-days: 14
+      - name: Guardar narración (main) y vídeo (rama video)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          cp video/*.mp4 "$RUNNER_TEMP/"
+          if [ -z "${{ inputs.sin_voz && 'x' || '' }}" ]; then
+            git add video/narracion/*.mp3
+            git diff --cached --quiet || { git commit -qm "Narración del vídeo (ElevenLabs)"; git pull -q --rebase origin main; git push -q origin HEAD:main; }
+          fi
+          # rama "video": conserva los otros vídeos que ya hubiera y sustituye el nuevo
+          git fetch -q origin +video:refs/remotes/origin/video || true
+          git checkout -q --orphan video-nuevo
+          git rm -rfq --cached .
+          git clean -fdq -e node_modules
+          if git rev-parse -q --verify refs/remotes/origin/video > /dev/null; then git checkout -q refs/remotes/origin/video -- . 2> /dev/null || true; fi
+          cp "$RUNNER_TEMP"/*.mp4 .
+          git add -f *.mp4
+          git commit -qm "Vídeo: ${{ inputs.cual || 'presentacion' }}"
+          git push -qf origin HEAD:video

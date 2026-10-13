@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- Imágenes solo de la propia web o de dentro de la página (las fotos de los perfiles son data:): si una
+       copia en la nube trajese una foto con la dirección de otra web, no se carga (no avisa a nadie) -->
+  <meta http-equiv="Content-Security-Policy" content="img-src 'self' data: blob:">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Juegos peques">
+  <meta name="theme-color" content="#fff7e8">
+  <title>Juegos peques</title>
+  <link rel="icon" href="icono.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icono-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+  <!-- ?v=AAAAMMDD en la hoja de estilos y en todos los <script> de abajo: cámbiala (la misma en todos) en cada
+       despliegue, así un index.html nuevo nunca se junta con un .css o .js viejo de la caché del navegador -->
+  <link rel="stylesheet" href="css/estilos.css?v=20261015">
+</head>
+<body>
+<!--CUERPO-->
+  <div id="deco" aria-hidden="true"></div>
+
+  <header class="barra">
+    <button class="btn-redondo" id="btn-atras" aria-label="Atrás" hidden>⬅️</button>
+    <span class="avatar-mini" id="avatar-mini" hidden></span>
+    <h1 id="titulo">Juegos peques</h1>
+    <button class="btn-letra" id="btn-letra" aria-label="Tipo de letra" hidden>ABC</button>
+    <span class="estrellas" id="estrellas" hidden>⭐ <b>0</b></span>
+  </header>
+
+  <!-- Inicio: quién juega -->
+  <main id="v-inicio" class="vista">
+    <p class="pregunta">¿Quién va a jugar?</p>
+    <div class="perfiles" id="perfiles"></div>
+    <button class="chip btn-video" id="btn-video">🎬 Ver el vídeo</button>
+    <!-- Abajo: los créditos y «Padres» (la copia en la nube: aquí se puede recuperar en un aparato vacío) -->
+    <div class="pie-inicio">
+      <p class="creditos">Voces: <a href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer">ElevenLabs</a></p>
+      <button class="btn-padres" id="inicio-padres">👪 Padres</button>
+    </div>
+  </main>
+
+  <!-- Crear o editar perfil -->
+  <main id="v-perfil" class="vista" hidden>
+    <form class="ficha-perfil" id="form-perfil" autocomplete="off">
+      <div class="avatar-grande" id="pf-avatar"></div>
+
+      <label class="campo" id="pf-campo-nombre">
+        <span>Nombre</span>
+        <input id="pf-nombre" maxlength="16" placeholder="Escribe el nombre" required>
+      </label>
+
+      <div class="campo">
+        <span>Edad</span>
+        <div class="chips" id="pf-edades"></div>
+      </div>
+
+      <div class="campo">
+        <span>Foto o dibujo</span>
+        <div class="chips" id="pf-emojis">
+          <label class="chip chip-foto">📷 Foto
+            <input type="file" id="pf-foto" accept="image/*" hidden>
+          </label>
+        </div>
+      </div>
+
+      <div class="campo">
+        <span>Tema</span>
+        <div class="temas" id="pf-temas"></div>
+      </div>
+
+      <div class="acciones">
+        <button type="submit" class="btn-principal" id="pf-guardar">¡A jugar!</button>
+        <button type="button" class="btn-texto" id="pf-borrar" hidden>Borrar perfil</button>
+      </div>
+      <div class="confirmar" id="pf-confirmar" hidden>
+        <p>¿Seguro que quieres borrar este perfil?</p>
+        <button type="button" class="btn-texto peligro" id="pf-borrar-si">Sí, borrar</button>
+        <button type="button" class="btn-texto" id="pf-borrar-no">No</button>
+      </div>
+    </form>
+  </main>
+
+  <!-- Menú de juegos -->
+  <main id="v-menu" class="vista" hidden>
+    <div class="juegos" id="juegos"></div>
+    <div class="nivel-caja" id="nivel-caja">
+      <p class="nivel-texto">Nivel de sonidos, sílabas y palabras</p>
+      <div class="chips" id="niveles"></div>
+    </div>
+    <div class="juegos juegos-premio" id="juegos-premio"></div>
+  </main>
+
+  <!-- Trazar: elegir número o letra -->
+  <main id="v-elegir" class="vista" hidden>
+    <h2>Números</h2>
+    <div class="rejilla" id="rejilla-numeros"></div>
+    <h2 id="titulo-mayus">Mayúsculas</h2>
+    <div class="rejilla" id="rejilla-letras"></div>
+    <h2 id="titulo-minus" hidden>Minúsculas</h2>
+    <div class="rejilla rejilla-minus" id="rejilla-minus" hidden></div>
+  </main>
+
+  <!-- Trazar -->
+  <main id="v-trazar" class="vista vista-trazar" hidden>
+    <div class="lienzo-caja"><canvas id="lienzo"></canvas></div>
+    <div class="controles">
+      <button class="btn-redondo" id="trazar-oir" aria-label="Escuchar">🔊</button>
+      <button class="btn-redondo" id="trazar-borrar" aria-label="Otra vez">↺</button>
+      <button class="btn-redondo" id="trazar-sig" aria-label="Siguiente">➡️</button>
+    </div>
+  </main>
+
+  <!-- Sonidos, sílabas, palabras -->
+  <main id="v-juego" class="vista" hidden>
+    <div class="modos" id="modos" hidden>
+      <button class="chip" data-modo="buscar">👂 Buscar</button>
+      <button class="chip" data-modo="escribir">✏️ Escribir</button>
+      <span class="separador"></span>
+      <button class="chip" id="btn-guia" hidden>Con guía</button>
+    </div>
+    <!-- «¿Qué toca?» (con el emoji de la rutina) y 🎬: app.js los quita si js/familia.js no trae rutina o vídeo de los días -->
+    <div class="modos" id="modos-dias" hidden>
+      <button class="chip" data-dias="hoy">📅 Hoy</button>
+      <button class="chip" data-dias="tren">🚂 Tren</button>
+      <button class="chip" data-dias="falta">❓ ¿Qué falta?</button>
+      <button class="chip" data-dias="cole">🏫 ¿Cole?</button>
+      <button class="chip" data-dias="toca">📌 ¿Qué toca?</button>
+      <button class="chip" id="btn-video-dias">🎬 Vídeo</button>
+    </div>
+    <div class="escena" id="escena"></div>
+    <div class="opciones" id="opciones"></div>
+    <div class="controles">
+      <button class="btn-redondo" id="juego-oir" aria-label="Escuchar otra vez">🔊</button>
+      <button class="btn-redondo" id="juego-pista" aria-label="Pista" hidden>💡</button>
+    </div>
+  </main>
+
+  <!-- Batalla de bloques: contra quién (monstruos o 1 contra 1), héroe y nivel (se desbloquea con estrellas) -->
+  <main id="v-minijuegos" class="vista vista-minijuegos" hidden>
+    <div class="mj-cabecera">
+      <h2 class="mj-titulo">Batalla de bloques</h2>
+      <p class="mj-estado" id="mj-estado"></p>
+      <p class="mj-progreso" id="mj-progreso" aria-hidden="true"></p>
+    </div>
+    <section class="mj-caja mj-caja-contra">
+      <p class="mj-rotulo" id="mj-contra-rotulo">¿Contra quién?</p>
+      <div class="mj-contra" role="group" aria-labelledby="mj-contra-rotulo">
+        <button class="mj-modo" data-contra="monstruos" aria-pressed="true"><span class="emoji" aria-hidden="true">🧟</span>Monstruos</button>
+        <button class="mj-modo" data-contra="duelo" aria-pressed="false"><span class="emoji" aria-hidden="true">⚔️</span>1 contra 1</button>
+      </div>
+    </section>
+    <section class="mj-caja mj-caja-heroes">
+      <p class="mj-rotulo">Elige tu héroe</p>
+      <div class="mj-heroes" id="mj-heroes"></div>
+    </section>
+    <div class="mj-lado" id="mj-monstruos">
+      <section class="mj-caja">
+        <p class="mj-rotulo">Nivel</p>
+        <div class="mj-niveles" id="mj-niveles">
+          <button class="chip mj-flecha" id="mj-nivel-menos" aria-label="Nivel anterior">◀</button>
+          <span class="mj-nivel-num" id="mj-nivel-num" aria-live="polite">1</span>
+          <button class="chip mj-flecha" id="mj-nivel-mas" aria-label="Nivel siguiente">▶</button>
+        </div>
+      </section>
+      <button class="btn-principal mj-jugar" id="mj-jugar">▶ ¡A jugar!</button>
+    </div>
+    <!-- 1 contra 1: en esta tablet (se pasan el iPad) o en red con un código de 4 animales -->
+    <div class="mj-lado mj-duelo" id="mj-duelo" hidden>
+      <div class="mj-dbotones">
+        <button class="mj-dbtn mj-dbtn-tablet" id="mj-tablet"><span class="emoji" aria-hidden="true">📱</span><span>En esta tablet</span></button>
+        <button class="mj-dbtn mj-dbtn-crear" id="mj-crear"><span class="emoji" aria-hidden="true">📡</span><span>Crear partida</span></button>
+        <button class="mj-dbtn mj-dbtn-unirme" id="mj-unirme"><span class="emoji" aria-hidden="true">🔑</span><span>Unirme</span></button>
+      </div>
+      <p class="mj-falta" id="mj-duelo-falta" hidden></p>
+      <p class="mj-sinred" id="mj-sinred" hidden>El juego en red no está disponible aquí</p>
+    </div>
+    <button class="btn-padres" id="mj-padres">👪 Padres</button>
+  </main>
+
+  <!-- Batalla 1 contra 1 en esta tablet: Steve contra Alex, cada uno con su ayuda -->
+  <main id="v-tablet" class="vista vista-duelo" hidden>
+    <h2 class="mj-titulo">1 contra 1</h2>
+    <div class="dl-lados">
+      <div class="dl-lado" id="dl-lado-0"></div>
+      <span class="dl-contra" aria-hidden="true">⚔️</span>
+      <div class="dl-lado" id="dl-lado-1"></div>
+    </div>
+    <button class="btn-principal mj-jugar" id="dl-jugar">▶ ¡A jugar!</button>
+  </main>
+
+  <!-- Batalla 1 contra 1 en red: crear partida (se enseña el código) o unirme (se toca con animales) -->
+  <main id="v-sala" class="vista vista-sala" hidden>
+    <section class="sala-crear" id="sala-crear" hidden>
+      <p class="mj-rotulo">Tu código</p>
+      <div class="sala-codigo" id="sala-codigo"></div>
+      <p class="sala-texto" id="sala-texto" aria-live="polite"></p>
+      <p class="sala-espera" id="sala-espera">Esperando<span class="puntos" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></p>
+      <div class="sala-botones">
+        <button class="btn-principal" id="sala-otra" hidden>🔄 Otra vez</button>
+        <button class="sala-cancelar" id="sala-cancelar">Cancelar</button>
+      </div>
+    </section>
+    <section class="sala-unirme" id="sala-unirme" hidden>
+      <div class="sala-fila">
+        <div class="sala-codigo sala-huecos" id="sala-huecos"></div>
+        <button class="sala-borrar" id="sala-borrar" aria-label="Borrar">⌫</button>
+      </div>
+      <p class="sala-texto sala-error" id="sala-error" role="alert"></p>
+      <div class="sala-animales" id="sala-animales"></div>
+      <div class="sala-dentro" id="sala-dentro" hidden>
+        <div class="dl-heroe"><canvas aria-hidden="true"></canvas><span class="dl-nombre"></span></div>
+        <p class="sala-espera">Esperando<span class="puntos" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Batalla de bloques: la partida, a pantalla completa (se sale con ⬅️) -->
+  <main id="v-batalla" class="vista vista-batalla" hidden>
+    <div class="batalla-caja" id="batalla-caja"></div>
+    <div class="aviso-salir" id="aviso-salir" hidden>
+      <div class="aviso-caja" role="alertdialog" aria-labelledby="aviso-texto">
+        <p id="aviso-texto">¿Salir de la partida?</p>
+        <div class="aviso-botones">
+          <button class="aviso-si" id="salir-si">Sí, salir</button>
+          <button class="aviso-no" id="salir-no">No, seguir jugando</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Para padres: una multiplicación hace de candado; luego, regalar partidas (si hay un niño jugando) y la
+       copia en la nube (js/nube.js: los textos y qué se ve lo pone él) -->
+  <div class="padres" id="padres" hidden>
+    <div class="padres-caja" role="dialog" aria-modal="true" aria-labelledby="padres-titulo">
+      <h2 id="padres-titulo">👪 Para padres</h2>
+      <div class="padres-candado" id="padres-candado">
+        <p class="padres-texto" id="padres-texto">Resuelve la cuenta para entrar</p>
+        <p class="padres-cuenta"><span id="padres-pregunta"></span> = <span class="padres-respuesta" id="padres-respuesta"></span></p>
+        <div class="teclado" id="padres-teclado"></div>
+      </div>
+      <div class="padres-panel" id="padres-panel" hidden>
+        <div class="padres-regalos" id="padres-regalos">
+          <p class="padres-texto" id="padres-info"></p>
+          <div class="padres-botones">
+            <button data-regalo="1">+1 partida</button>
+            <button data-regalo="3">+3 partidas</button>
+            <button data-regalo="libre">Libre hoy</button>
+          </div>
+          <p class="padres-hecho" id="padres-hecho" aria-live="polite"></p>
+        </div>
+        <section class="nube" id="nube" aria-labelledby="nube-titulo">
+          <h3 id="nube-titulo">☁️ Copia en la nube</h3>
+          <p class="nube-estado" id="nube-estado" aria-live="polite"></p>
+          <p class="nube-aviso" id="nube-aviso" aria-live="polite"></p>
+          <div class="nube-botones" id="nube-apagada" hidden>
+            <p class="nube-nota">Cifrada en este aparato: el servidor no puede leerla. Con su código se recupera en otro aparato.</p>
+            <button type="button" class="nube-azul" id="nube-guardar">☁️ Guardar en la nube</button>
+            <button type="button" class="nube-azul" id="nube-recuperar">🔑 Recuperar con código</button>
+          </div>
+          <div class="nube-botones" id="nube-encendida" hidden>
+            <button type="button" class="nube-texto" id="nube-ahora">🔄 Sincronizar ahora</button>
+            <button type="button" class="nube-texto" id="nube-ver">👁️ Ver el código</button>
+            <button type="button" class="nube-texto" id="nube-dejar">Dejar de sincronizar en este aparato</button>
+            <button type="button" class="nube-texto peligro" id="nube-borrar">Borrar la copia de la nube</button>
+          </div>
+          <div class="nube-botones" id="nube-perdida" hidden>
+            <button type="button" class="nube-azul" id="nube-otra-vez">☁️ Guardarla otra vez (mismo código)</button>
+            <button type="button" class="nube-texto" id="nube-olvidar">Dejar de sincronizar en este aparato</button>
+          </div>
+          <div class="nube-codigo" id="nube-codigo" hidden>
+            <p class="nube-apuntalo">✍️ Apúntalo</p>
+            <ol class="nube-palabras" id="nube-palabras" aria-label="Código de familia"></ol>
+            <p class="nube-nota">Es el código de familia. Sin él no se puede recuperar la copia, y con él cualquiera podría: apúntalo en papel y guárdalo bien. No se envía a ninguna parte.</p>
+            <p class="nube-nota" id="nube-ms"></p>
+            <button type="button" class="nube-azul" id="nube-apuntado">Ya lo he apuntado</button>
+          </div>
+          <form class="nube-form" id="nube-form" hidden autocomplete="off">
+            <label for="nube-entrada">Escribe las 5 palabras del código</label>
+            <input id="nube-entrada" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="gato luna mesa...">
+            <p class="nube-error" id="nube-error" role="alert"></p>
+            <div class="nube-botones">
+              <button type="submit" class="nube-azul">🔑 Recuperar</button>
+              <button type="button" class="nube-texto" id="nube-cancelar">Cancelar</button>
+            </div>
+          </form>
+          <div class="nube-pregunta" id="nube-pregunta" hidden>
+            <div id="nube-pregunta-texto"></div>
+            <div class="nube-botones" id="nube-pregunta-botones"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <button class="padres-cerrar" id="padres-cerrar" aria-label="Cerrar">✕</button>
+  </div>
+
+  <div class="intro" id="intro" hidden>
+    <video id="intro-video" src="media/intro.mp4" poster="media/intro.jpg" controls playsinline preload="metadata"></video>
+    <button class="btn-saltar" id="intro-saltar">Saltar ⏭</button>
+  </div>
+
+  <div id="fiesta" aria-hidden="true"></div>
+<!--/CUERPO-->
+  <!-- (la versión ?v=: ver arriba, junto a la hoja de estilos; cámbiala en cada despliegue) -->
+  <script src="audio/manifest.js?v=20261015"></script>
+  <script src="js/frases.js?v=20261015"></script>
+  <script src="js/familia.js?v=20261015"></script>
+  <script src="js/contenido.js?v=20261015"></script>
+  <script src="js/temas.js?v=20261015"></script>
+  <script src="js/trazos.js?v=20261015"></script>
+  <script src="js/minijuegos/sprites.js?v=20261015"></script>
+  <script src="js/minijuegos/sfx.js?v=20261015"></script>
+  <script src="js/minijuegos/batalla.js?v=20261015"></script>
+  <script src="js/minijuegos/red.js?v=20261015"></script>
+  <script src="js/nube.js?v=20261015"></script>
+  <script src="js/app.js?v=20261015"></script>
+</body>
+</html>

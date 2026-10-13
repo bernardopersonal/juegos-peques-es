@@ -1,0 +1,11 @@
+# Secretos: nunca al repo
+.env
+.env.*
+!.env.example
+
+node_modules/
+.DS_Store
+prueba-voz/
+video/salida/
+video/*.mp4
+video/narracion/muda-*

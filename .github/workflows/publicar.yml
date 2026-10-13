@@ -1,0 +1,45 @@
+name: Publicar en GitHub Pages
+
+# Sube la web a GitHub Pages. Pages no tiene PHP: allí el 1 contra 1 en red sale «no disponible» (en la
+# misma tablet sí funciona).
+#   - En bernardopersonal/juegos-peques-es: con cada push a main, y a mano.
+#   - En un fork: a mano, Actions > "Publicar en GitHub Pages" > Run workflow (o pon el nombre de tu repo
+#     en el if: de abajo, para que publique con cada push).
+#   - Nunca desde un repo privado: la web de Pages es pública.
+# Antes, una vez: Settings > Pages > Source: "GitHub Actions".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un despliegue cada vez, sin cortar uno a medias
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    if: github.event.repository.private == false && (github.event_name == 'workflow_dispatch' || github.repository == 'bernardopersonal/juegos-peques-es')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar web (sin scripts, vídeo de trabajo, docs ni workflows)
+        # De api/, solo sala.php, para que el ping del 1 contra 1 no dé un 404: Pages lo sirve como un
+        # archivo más (no lo ejecuta) y la app lo trata como «sin PHP». api/datos/, nunca.
+        run: |
+          mkdir -p _site/api
+          cp -r index.html icono.svg icono-180.png icono-512.png manifest.webmanifest css js audio media _site/
+          cp api/sala.php _site/api/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

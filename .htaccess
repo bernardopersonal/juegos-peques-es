@@ -1,0 +1,28 @@
+# Juegos peques (en el hosting, en la carpeta de la web, junto a index.html). El navegador vuelve a
+# preguntar siempre por la página y el manifiesto antes de usar su copia (si no han cambiado, la
+# respuesta es un 304 sin cuerpo): así, después de subir por FTP, nunca se junta un index.html viejo
+# con los .js nuevos.
+# Sin mod_headers no hace nada (y no rompe nada).
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|webmanifest)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
+
+# Puerta con contraseña (api/puerta.php, docs/PUERTA-Y-COPIA.md). Entre las dos marcas lo escribe
+# api/puerta.php al ponerla. Aquí hay una red de seguridad que sin puerta no hace nada (la web se ve sin
+# contraseña). Con la puerta puesta, no subas este archivo encima del del servidor; si se sube, la red
+# manda a la puerta la primera petición que llegue (de la familia o de un extraño) y la puerta vuelve a
+# escribir su bloque: la familia sigue con su cookie y un extraño se queda fuera.
+# PUERTA-INICIO
+# Red de seguridad de la puerta (api/puerta.php): sin puerta no hace nada. Si la hay y aquí está esto
+# en vez de su bloque (se ha subido el .htaccess del repo encima), todo va a la puerta, que lo arregla.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond $1 !^(api/puerta\.php|icono-180\.png|icono-512\.png|icono\.svg|manifest\.webmanifest)$
+RewriteCond %{REQUEST_FILENAME}::$1 ^(.*/)(.*)::\2$
+RewriteCond %1api/datos/puerta.php -f
+RewriteCond %{REQUEST_URI}::$1 ^(.*/)(.*)::\2$
+RewriteRule ^(.*)$ %1api/puerta.php [R=302,L]
+</IfModule>
+# PUERTA-FIN

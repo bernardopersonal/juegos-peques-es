@@ -1,0 +1,7 @@
+# Lo que escriben api/sala.php (salas, códigos, contadores, sal, candado), api/puerta.php y
+# api/copia.php (las copias en la nube, cifradas) al funcionar: nunca al repo. Solo se versionan
+# estos tres archivos.
+*
+!.gitignore
+!.htaccess
+!index.html

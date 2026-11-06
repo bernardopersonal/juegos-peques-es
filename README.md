@@ -18,7 +18,9 @@
 
 > **English summary.** *Juegos peques* is a set of educational games in Spanish (from Spain) for
 > children aged 3 to 9: tracing numbers and letters, counting, colours, letter sounds, syllables, words
-> and the days of the week, all with recorded voice (generated with ElevenLabs). Stars earned while
+> and the days of the week, all with recorded voice (generated with ElevenLabs), plus a play in English
+> (*The Three Little Pigs*) where the child learns the wolf's lines with a British or American accent:
+> listen, repeat, record yourself and blow into the microphone to knock the houses down. Stars earned while
 > learning unlock a block-world battle game, with a 1-vs-1 mode on the same tablet or over the network.
 > It is a static web app (HTML, CSS and plain JavaScript, no libraries, plus a small PHP file for the
 > network mode) that runs on iPad, phones and computers. Progress stays on the device (optionally, with an
@@ -49,7 +51,7 @@ presentación narrado.
 | Edad | Juegos |
 |---|---|
 | **Peques** (hasta 4 años) | ✏️ Trazar · 🔢 Contar · 🎨 Colores · 🔤 Letras |
-| **Mayores** (5 años o más) | 🚂 Días de la semana · ✏️ Trazar · 👂 Sonidos · 🧩 Sílabas · 📖 Palabras |
+| **Mayores** (5 años o más) | 🚂 Días de la semana · 🐺 Teatro en inglés · ✏️ Trazar · 👂 Sonidos · 🧩 Sílabas · 📖 Palabras |
 | **Todos**, de premio | 🎮 Batalla de bloques |
 
 | Juego | Qué se hace |
@@ -62,6 +64,7 @@ presentación narrado.
 | 🧩 **Sílabas** | *Buscar:* oye «Busca: ma» y elige la sílaba. *Escribir:* oye «Escribe: mo» y traza la M y la O, con guía o sin ella. |
 | 📖 **Palabras** | Ordena las sílabas del dibujo: PA + TO. |
 | 🚂 **Días de la semana** | Hoy y mañana, el tren de la semana, «¿Qué falta?» y «¿Hay cole?». Con vuestra rutina, también «¿Qué toca?». |
+| 🐺 **Teatro en inglés** | Aprende las frases del lobo de *The Three Little Pigs*, con acento británico o americano. *Escuchar:* el cerdito, el lobo y el karaoke, frase a frase; 🐢 despacio y a trozos; 🎤 se graba y se oye junto al lobo; y sopla al micro (o toca muchas veces 💨) para tirar las casas. *Ensayo:* la obra entera, con apuntador. *¿Qué viene?:* elige qué dice ahora el lobo. |
 
 Sonidos, Sílabas y Palabras tienen 3 niveles: vocales; M y P; L, S y T.
 
@@ -115,7 +118,10 @@ Para que la voz diga su nombre y conozca vuestra semana:
    O en GitHub, sin instalar nada: Secret `ELEVENLABS_API_KEY`, variable `ELEVENLABS_VOICE_ID` y
    Actions → **Generar audios (ElevenLabs)** → *Run workflow*.
 
-Todas las demás frases ya vienen grabadas y, mientras falte alguna, la dice la voz del navegador. El plan
+Todas las demás frases ya vienen grabadas y, mientras falte alguna, la dice la voz del navegador. Las
+voces en inglés del Teatro también vienen hechas (`audio/teatro/`); si cambias su guion
+(`js/teatro-guion.js`), `npm run teatro:simular` dice lo que falta y `npm run teatro` lo genera
+(`scripts/generar-teatro.mjs`), o en GitHub: Actions → **Generar voces del teatro (inglés)**. El plan
 gratuito de ElevenLabs es para uso no comercial y pide citar a elevenlabs.io (la app lo hace en el
 inicio). **La clave nunca va en el código:** mejor una solo para este proyecto, con permiso únicamente
 de *Text to Speech* y con límite de créditos. Las palabras, sílabas y frases están en `js/contenido.js`.
@@ -127,6 +133,7 @@ de *Text to Speech* y con límite de créditos. Las palabras, sílabas y frases 
 | Perfiles (nombre, edad, foto o dibujo, tema), estrellas y progreso | En el aparato, en el almacenamiento del navegador (`localStorage`). La foto se recorta a 256 px. No hay cuentas. Sin la copia en la nube, no se sube a ningún sitio. |
 | Copia en la nube (opcional, en tu hosting) | En **👪 Padres**: se cifra en el aparato (AES-256-GCM) con un código de familia de 5 palabras que no sale de él, y el servidor (`api/copia.php`) solo guarda el texto cifrado. Con el código se recupera en otro aparato y las tablets se mantienen al día. Solo funciona con la contraseña de la web puesta. Todo el detalle, en [docs/PUERTA-Y-COPIA.md](docs/PUERTA-Y-COPIA.md). |
 | 1 contra 1 en red | Por la red solo van el héroe (Steve o Alex), las jugadas y el estado del mapa. Nunca el nombre, la edad ni la foto. |
+| Micrófono del Teatro | Solo se abre al tocar 🎤 o 💨, y se apaga en cuanto acaba. La grabación se queda en la memoria del navegador mientras se juega: no se guarda ni se sube, y se borra al salir del Teatro. |
 | El servidor (`api/sala.php`) | Archivos en `api/datos/`, sin base de datos: la sala y sus mensajes (se borran cuando salen los dos o a las 3 h sin actividad) y el código de animales (caduca a los 15 min). Para frenar a quien pruebe códigos, guarda una huella de la IP con una clave que cambia cada hora, nunca la IP. Todo el detalle, en [docs/DUELO.md](docs/DUELO.md#privacidad-los-jugadores-son-niños). |
 | Terceros | Solo Google Fonts: el navegador pide las fuentes a fonts.googleapis.com y fonts.gstatic.com, así que Google ve la IP. Si no lo quieres, sírvelas desde tu web y cambia el `<link>` de `index.html`. |
 
@@ -165,9 +172,9 @@ php -S 0.0.0.0:8080 -t .      # desde la tablet, en la misma wifi: http://IP-de-
 
 ## Por dentro
 
-Una sola página, sin librerías ni paso de compilación. Canvas 2D a mano para trazar y para la Batalla,
-sonidos 8-bit sintetizados con Web Audio, y PHP sin base de datos para el modo en red. La música del
-vídeo también sale de código (`video/musica.mjs`).
+Una sola página, sin librerías ni paso de compilación. Canvas 2D a mano para trazar, para la Batalla y
+para el escenario del Teatro, sonidos 8-bit sintetizados con Web Audio, y PHP sin base de datos para el
+modo en red. La música del vídeo también sale de código (`video/musica.mjs`).
 
 ```
 index.html            la web (una sola página)
@@ -175,6 +182,7 @@ css/estilos.css
 js/familia.js         ← tus niños y vuestra rutina (vacío, con un ejemplo)
 js/contenido.js       ← palabras, sílabas, frases y niveles
 js/app.js             los juegos
+js/teatro.js          el Teatro en inglés; teatro-escena.js (el escenario pixelado) y teatro-guion.js (las frases)
 js/trazos.js          forma y orden de los trazos de cada número y letra
 js/frases.js          reproduce los MP3 (o usa la voz del navegador si falta alguno)
 js/temas.js           colores y decoración de cada tema
@@ -184,12 +192,13 @@ api/sala.php          servidor del 1 contra 1 en red (PHP 7.4 a 8.x); guarda en 
 api/puerta.php        la contraseña de la web (con el .htaccess de la raíz)
 api/copia.php         donde se guarda la copia en la nube (cifrada)
 audio/                los MP3 de las frases + manifest.js
+audio/teatro/         las voces en inglés del Teatro (gb/, us/) + manifest.js, con el momento de cada palabra
 media/                el vídeo de presentación
 video/                escena, música y montaje del vídeo; narración en video/narracion/
-scripts/              generar audios, elegir voz y hacer los vídeos (Node 18 o más)
+scripts/              generar audios (y las voces del Teatro), elegir voz y hacer los vídeos (Node 18 o más)
 docs/DUELO.md         el 1 contra 1: cómo funciona, privacidad y despliegue por FTP
 docs/PUERTA-Y-COPIA.md la contraseña de la web y la copia en la nube: uso, seguridad y privacidad
-.github/workflows/    generar audios, hacer el vídeo y publicar en GitHub Pages
+.github/workflows/    generar audios, las voces del Teatro, hacer el vídeo y publicar en GitHub Pages
 ```
 
 ## Licencias

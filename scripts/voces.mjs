@@ -5,7 +5,7 @@ import { KEY, salir } from './elevenlabs.mjs';
 if (!KEY) salir('Falta ELEVENLABS_API_KEY en .env');
 const h = { 'xi-api-key': KEY };
 
-const mias = await fetch('https://api.elevenlabs.io/v2/voices?page_size=100', { headers: h }).then((r) => r.json());
+const mias = await fetch('https://api.elevenlabs.io/v2/voices?page_size=100', { headers: h, redirect: 'manual' }).then((r) => r.json());
 console.log('\n== Voces en tu cuenta (puedes usarlas ya) ==');
 for (const v of mias.voices || []) {
   const l = v.labels || {};
@@ -13,7 +13,7 @@ for (const v of mias.voices || []) {
 }
 
 const q = new URLSearchParams({ language: 'es', gender: 'male', page_size: '30', sort: 'usage_character_count_1y' });
-const lib = await fetch('https://api.elevenlabs.io/v1/shared-voices?' + q, { headers: h }).then((r) => r.json());
+const lib = await fetch('https://api.elevenlabs.io/v1/shared-voices?' + q, { headers: h, redirect: 'manual' }).then((r) => r.json());
 console.log('\n== Biblioteca: voces masculinas en español ==');
 console.log('(Para usar una, ábrela en elevenlabs.io > Voices > Library y pulsa "Add to my voices")\n');
 for (const v of lib.voices || []) {

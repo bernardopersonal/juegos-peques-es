@@ -171,6 +171,17 @@
     emojiToca: (FAMILIA.rutina && FAMILIA.rutina.emoji) || '📌',
   };
 
+  // ---------- Teatro en inglés (js/teatro.js; el guion, en js/teatro-guion.js) ----------
+  // Aquí solo las instrucciones en español: lo que se dice en inglés va aparte (audio/teatro/).
+  const teatro = {
+    escucha: 'Escucha al lobo.',
+    ahoraTu: '¡Ahora tú!',
+    sopla: '¡Sopla muy fuerte!',
+    ensayo: 'Escucha a los cerditos y di la frase del lobo.',
+    queDice: '¿Qué dice ahora el lobo?',
+    funcion: '¡Bravo, qué función!',
+  };
+
   // ---------- Comunes ----------
   const comun = {
     quien: '¿Quién va a jugar?',
@@ -206,6 +217,7 @@
       dias.cole, dias.hayCole, dias.finde, ...dias.toca.map((t) => t.pregunta));
     f.push(letras.intro);
     LETRAS_PEQUES.forEach((c) => f.push(letras.pregunta(c)));
+    f.push(...Object.values(teatro));
     return [...new Set(f)];
   }
 
@@ -224,6 +236,7 @@
     PALABRAS, palabras, comun, listaFrases,
     DIAS, dias, VIDEO_DIAS,
     EDAD_PEQUES, contar, COLORES, colores, LETRAS_PEQUES, letras,
+    teatro,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = CONTENIDO;
   else root.CONTENIDO = CONTENIDO;

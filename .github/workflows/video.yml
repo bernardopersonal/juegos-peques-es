@@ -59,9 +59,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           cp video/*.mp4 "$RUNNER_TEMP/"
+          # La narración, a main solo si se ha lanzado desde main (desde otra rama, el vídeo sí se hace)
           if [ -z "${{ inputs.sin_voz && 'x' || '' }}" ]; then
-            git add video/narracion/*.mp3
-            git diff --cached --quiet || { git commit -qm "Narración del vídeo (ElevenLabs)"; git pull -q --rebase origin main; git push -q origin HEAD:main; }
+            if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+              git add video/narracion/*.mp3
+              git diff --cached --quiet || { git commit -qm "Narración del vídeo (ElevenLabs)"; git pull -q --rebase origin main; git push -q origin HEAD:main; }
+            else
+              echo "::warning::No es main: la narración no se guarda en main"
+            fi
           fi
           # rama "video": conserva los otros vídeos que ya hubiera y sustituye el nuevo
           git fetch -q origin +video:refs/remotes/origin/video || true

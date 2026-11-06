@@ -25,14 +25,19 @@
   reproductor.preload = 'auto';
   let terminar = null;
 
-  // iOS solo deja reproducir audio después de un toque: lo "desbloqueamos" en el primero.
+  // iOS solo deja reproducir audio después de un toque: lo "desbloqueamos" en el primero. El play() dentro
+  // del toque basta, y el pause() va justo detrás (no cuando se cumpla): si no, ese play() se queda
+  // pendiente y el pause() de después cortaba la primera frase (la bienvenida).
   function desbloquear() {
-    reproductor.muted = true;
-    reproductor.play().catch(() => {}).finally(() => {
-      reproductor.pause();
-      reproductor.muted = false;
-    });
     document.removeEventListener('pointerdown', desbloquear);
+    if (reproductor.src) return;
+    try {
+      reproductor.muted = true;
+      const p = reproductor.play();
+      reproductor.pause();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) { /* nada */ }
+    reproductor.muted = false;
   }
   document.addEventListener('pointerdown', desbloquear);
 
@@ -66,5 +71,13 @@
     });
   }
 
-  root.Voz = { hablar, slug };
+  // Para lo que esté diciendo (y cumple su promesa): el teatro, al cambiar de acción, para que no se junte
+  // con el inglés ni lo oiga el micro
+  function callar() {
+    if (terminar) terminar();
+    try { reproductor.pause(); } catch (e) { /* nada */ }
+    try { if ('speechSynthesis' in root) speechSynthesis.cancel(); } catch (e) { /* nada */ }
+  }
+
+  root.Voz = { hablar, slug, callar };
 })(typeof window !== 'undefined' ? window : globalThis);

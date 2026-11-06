@@ -575,8 +575,8 @@ en el servidor, en la carpeta de tu web en el hosting, por ejemplo `www/juegos/`
 ### 1. Antes de subir
 
 1. En tu ordenador, abre `index.html` con un editor de texto. Mira el número que va detrás de
-   `?v=` en la hoja de estilos (ahora, `20261015`). Ese número sale 13 veces: la hoja de estilos y
-   los 12 scripts. Cámbialo en todas por la fecha de hoy (`AAAAMMDD`), la misma en todas. Lo más
+   `?v=` en la hoja de estilos (ahora, `20261107`). Ese número sale 17 veces: la hoja de estilos y
+   los 16 scripts. Cámbialo en todas por la fecha de hoy (`AAAAMMDD`), la misma en todas. Lo más
    fácil es Buscar y reemplazar: `?v=20261014` → `?v=20261020` y «Reemplazar todo». Guarda.
 2. Abre FileZilla y conéctate al hosting. En el menú: **Servidor → Forzar mostrar archivos
    ocultos**. Si no, no se ven los `.htaccess`.
@@ -589,30 +589,41 @@ Arrastra de izquierda a derecha, cada cosa a su misma carpeta. Si FileZilla preg
 «Sobrescribir». Si falta alguna carpeta en el servidor (`api`, `api/datos`), créala antes: botón
 derecho → «Crear directorio».
 
-1. la carpeta `js/` entera;
+1. la carpeta `js/` entera (con el teatro en inglés: `js/teatro.js`, `js/teatro-escena.js` y
+   `js/teatro-guion.js`);
 2. la carpeta `css/` entera;
-3. `api/sala.php`;
-4. `api/datos/.htaccess`;
-5. `api/datos/index.html`;
-6. el `.htaccess` de la raíz del proyecto (va a `www/juegos/.htaccess`). Si en el servidor ya
+3. las voces del teatro en inglés: la carpeta `audio/teatro/` entera, con `gb/`, `us/` y
+   `manifest.js` (va a `www/juegos/audio/teatro/`). Ojo: `index.html` carga
+   `audio/teatro/manifest.js`, así que tiene que estar subido antes que él;
+4. las frases en español nuevas: los MP3 que falten en `www/juegos/audio/` (con el teatro, las
+   de «Escucha al lobo.», «¡Ahora tú!», «¡Sopla muy fuerte!», «Escucha a los cerditos y di la
+   frase del lobo.», «¿Qué dice ahora el lobo?» y «¡Bravo, qué función!») y `audio/manifest.js`,
+   que es el que dice cuáles hay. Lo más fácil: arrastrar la carpeta `audio/` entera y, cuando
+   FileZilla pregunte por los que ya están, «Sobrescribir si la fuente es más reciente» (marca
+   «Usar siempre esta acción»);
+5. `api/sala.php`;
+6. `api/datos/.htaccess`;
+7. `api/datos/index.html`;
+8. el `.htaccess` de la raíz del proyecto (va a `www/juegos/.htaccess`). Si en el servidor ya
    había uno, ábrelo antes (botón derecho → «Ver/Editar»): si tiene otras líneas, hay que juntar
    los dos, no pisarlo;
-7. **el último, `index.html`.**
+9. **el último, `index.html`.**
 
 El orden importa: `index.html` es el que dice qué versión cargar. Si llegase antes que lo demás,
 una tablet podría juntar la página nueva con código viejo.
 
-Lo demás (`audio/`, `media/`, los iconos, `manifest.webmanifest`) no cambia con el 1 contra 1.
-Solo hay que subirlo la primera vez, y también antes de `index.html`.
+Lo demás (`media/`, los iconos, `manifest.webmanifest`) no cambia con el 1 contra 1 ni con el
+teatro. Solo hay que subirlo la primera vez, y también antes de `index.html`. `audio/` cambia cada
+vez que hay frases nuevas (pasos 3 y 4).
 
 ### 3. Qué NO subir
 
 - De `api/datos/`: `sal.php`, `pimienta.php`, `limpieza.php`, `candado.lock` y las carpetas
   `salas/`, `codigos/` y `limites/`. Son los datos de las pruebas en tu ordenador; el servidor crea
   los suyos solo.
-- `docs/`, `scripts/`, `.github/`, `video/`, `package.json` y **`.env` o cualquier `.env…`** (ahí
-  está la clave de ElevenLabs). Tampoco hacen falta `README.md`, `node_modules/` ni
-  `api/datos/.gitignore`.
+- `docs/`, `scripts/`, `.github/`, `video/`, `package.json`, las pruebas de voces (`prueba-voz/`,
+  `prueba-teatro/`) y **`.env` o cualquier `.env…`** (ahí está la clave de ElevenLabs). Tampoco
+  hacen falta `README.md`, `node_modules/` ni `api/datos/.gitignore`.
 
 Si alguna vez subiste alguno, bórralo del servidor (botón derecho → «Eliminar»). En
 `api/datos/`, hazlo una sola vez y con nadie jugando: el servidor los vuelve a crear solos, con una

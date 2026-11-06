@@ -1,7 +1,7 @@
 {
   "name": "juegos-peques",
   "private": true,
-  "description": "Juegos educativos en español para peques (trazar, contar, sonidos, sílabas, palabras y días de la semana), con voz y una batalla de premio. Web estática sin dependencias.",
+  "description": "Juegos educativos en español para peques (trazar, contar, sonidos, sílabas, palabras y días de la semana) y un teatro en inglés, con voz y una batalla de premio. Web estática sin dependencias.",
   "license": "MIT AND CC-BY-NC-4.0",
   "homepage": "https://bernardopersonal.github.io/juegos-peques-es/",
   "repository": {
@@ -13,6 +13,9 @@
     "voces": "node scripts/voces.mjs",
     "audios": "node scripts/generar-audios.mjs",
     "audios:simular": "node scripts/generar-audios.mjs --dry-run",
+    "teatro": "node scripts/generar-teatro.mjs",
+    "teatro:simular": "node scripts/generar-teatro.mjs --dry-run",
+    "teatro:prueba": "node scripts/generar-teatro.mjs --prueba",
     "video": "node scripts/hacer-video.mjs",
     "video:prueba": "node scripts/hacer-video.mjs --sin-voz",
     "video:dias": "node scripts/hacer-video-dias.mjs",

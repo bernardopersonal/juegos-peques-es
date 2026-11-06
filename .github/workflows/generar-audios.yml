@@ -54,7 +54,10 @@ jobs:
       # --- Generación completa ---
       - name: Generar MP3
         if: ${{ !inputs.solo_prueba }}
-        run: node scripts/generar-audios.mjs ${{ inputs.regenerar_todo && '--force' || '' }}
+        # Solo desde main (se guardan en main): si no, antes de gastar nada, se para
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then echo "::error::Lánzalo desde main para guardar los audios"; exit 1; fi
+          node scripts/generar-audios.mjs ${{ inputs.regenerar_todo && '--force' || '' }}
       - name: Guardar audios en el repo
         if: ${{ !inputs.solo_prueba }}
         run: |
@@ -63,4 +66,5 @@ jobs:
           git add -A audio
           git diff --cached --quiet && echo "Sin cambios" && exit 0
           git commit -m "Audios generados con ElevenLabs"
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main

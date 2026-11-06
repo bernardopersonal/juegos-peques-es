@@ -85,7 +85,7 @@
     const guardados = guardado.leer('perfiles', {});
     delete guardados[id];
     guardado.escribir('perfiles', guardados);
-    ['estrellas', 'trazados', 'nivel', 'letra', ...CLAVES_BATALLA].forEach((k) => guardado.borrar(k + '-' + id));
+    ['estrellas', 'trazados', 'nivel', 'letra', ...CLAVES_BATALLA, ...CLAVES_TEATRO].forEach((k) => guardado.borrar(k + '-' + id));
     perfiles = cargarPerfiles();
   }
   const dato = (k, def) => guardado.leer(k + '-' + perfil.id, def);
@@ -176,7 +176,7 @@
   // ---------- Navegación ----------
   const PADRE = {
     perfil: 'inicio', menu: 'inicio', elegir: 'menu', trazar: 'elegir', juego: 'menu', minijuegos: 'menu', batalla: 'minijuegos',
-    tablet: 'minijuegos', sala: 'minijuegos',
+    tablet: 'minijuegos', sala: 'minijuegos', teatro: 'menu',
   };
   let vista = 'inicio';
   // Doble toque de un niño: el 2.º toque caería en lo que haya debajo en la pantalla nueva (un animal en
@@ -191,6 +191,7 @@
     if (destino !== vista) calmaHasta = performance.now() + 450;
     if (destino !== 'batalla') pararBatalla(); // al salir de la partida, se para (y se quita del todo)
     if (destino !== 'batalla' && destino !== 'sala') cerrarRed(); // 1 contra 1 en red: fuera de la sala y de la partida, se sale
+    if (destino !== 'teatro' && window.Teatro) window.Teatro.cerrar(); // al salir del teatro: sin sonido, sin micro y sin grabaciones
     vista = destino;
     document.body.classList.toggle('en-batalla', destino === 'batalla');
     document.querySelectorAll('.vista').forEach((v) => (v.hidden = v.id !== 'v-' + destino));
@@ -210,7 +211,7 @@
     pintarEstrellas();
     pintarBtnLetra();
     if (destino === 'elegir') pintarRejillas(); // con el tipo de letra de ahora y las letras ya hechas
-    if (destino === 'menu') pintarTarjetaBatalla(); // partidas que quedan (cambian al ganar estrellas)
+    if (destino === 'menu') { pintarTarjetaBatalla(); pintarTarjetaTeatro(); } // partidas que quedan (cambian al ganar estrellas)
     if (destino === 'minijuegos') pintarMinijuegos();
     if (destino === 'tablet') pintarTablet();
     if (destino === 'sala') pintarSala();
@@ -259,8 +260,8 @@
     e.hidden = !perfil || vista === 'perfil';
     if (!e.hidden) e.querySelector('b').textContent = dato('estrellas', 0);
   }
-  function ganarEstrella() {
-    guardarDato('estrellas', dato('estrellas', 0) + 1);
+  function ganarEstrella(n = 1) {
+    guardarDato('estrellas', dato('estrellas', 0) + n);
     pintarEstrellas();
   }
   function fiesta() {
@@ -434,21 +435,28 @@
     silabas: { emoji: '🧩', nombre: 'Sílabas' },
     palabras: { emoji: '📖', nombre: 'Palabras' },
     dias: { emoji: '🚂', nombre: 'Días de la semana' },
+    teatro: { emoji: '🐺', nombre: 'Teatro', obra: 'The Three Little Pigs' },
     batalla: { emoji: '🎮', nombre: 'Batalla' },
   };
   const esPeque = () => perfil.edad <= C.EDAD_PEQUES;
 
   function prepararMenu() {
-    const lista = esPeque() ? ['trazar', 'contar', 'colores', 'letras'] : ['dias', 'trazar', 'sonidos', 'silabas', 'palabras'];
+    // Mayores: Días y Teatro arriba, la mitad de la fila cada una (con un index.html o un teatro.js viejos, sin Teatro)
+    const conTeatro = !esPeque() && !!window.Teatro && !!$('#v-teatro');
+    const lista = esPeque() ? ['trazar', 'contar', 'colores', 'letras']
+      : ['dias', ...(conTeatro ? ['teatro'] : []), 'trazar', 'sonidos', 'silabas', 'palabras'];
     const caja = $('#juegos');
     caja.classList.toggle('peques', esPeque());
     caja.innerHTML = '';
     // El minijuego (premio), para los dos menús: al final, debajo del nivel de los juegos de aprender
     $('#juegos-premio').replaceChildren(crearTarjetaBatalla());
-    lista.forEach((id, i) => {
+    let k = 0; // los colores t1-t4, en orden, de las tarjetas normales
+    lista.forEach((id) => {
+      if (id === 'teatro') { caja.appendChild(crearTarjetaTeatro()); return; }
       const b = document.createElement('button');
-      const ancha = esPeque() ? id === 'trazar' : id === 'dias';
-      b.className = 'tarjeta ' + (id === 'dias' ? 'tarjeta-dias' : 't' + (((i - (esPeque() ? 0 : 1)) % 4) + 1)) + (ancha ? ' ancha' : '');
+      const ancha = esPeque() ? id === 'trazar' : id === 'dias' && !conTeatro;
+      const media = id === 'dias' && conTeatro;
+      b.className = 'tarjeta ' + (id === 'dias' ? 'tarjeta-dias' : 't' + ((k++ % 4) + 1)) + (ancha ? ' ancha' : '') + (media ? ' media' : '');
       b.innerHTML = '<span class="emoji"></span><span></span>';
       b.firstChild.textContent = JUEGOS[id].emoji;
       b.lastChild.textContent = JUEGOS[id].nombre;
@@ -476,6 +484,7 @@
 
   async function abrirJuego(id) {
     if (id === 'batalla') { abrirMinijuegos(); return; }
+    if (id === 'teatro') { abrirTeatro(); return; }
     if (id === 'trazar') {
       ir('elegir');
       hablar(C.trazar.intro);
@@ -817,7 +826,7 @@
     if (vista === 'minijuegos') pintarHeroes(); // el tamaño de los dibujos depende de la pantalla
     if (vista === 'tablet') pintarTablet();
     if (vista === 'sala') pintarSala();
-    if (vista === 'menu') pintarTarjetaBatalla();
+    if (vista === 'menu') { pintarTarjetaBatalla(); pintarTarjetaTeatro(); }
   });
 
   async function terminarTrazo(c) {
@@ -1306,6 +1315,46 @@
       opciones.appendChild(v);
     });
     repetir = () => hablar(t.pregunta);
+  }
+
+  // =====================================================
+  // TEATRO EN INGLÉS (js/teatro.js): The Three Little Pigs, para los mayores
+  // El juego va en js/teatro.js; aquí, la tarjeta del menú, la pantalla y las estrellas que da (cuentan para la
+  // Batalla como las demás: ⭐ por frase repetida, la primera vez en el día; ⭐⭐⭐ al acabar el ensayo; ⭐ por
+  // acierto a la primera en «¿Qué viene ahora?»). Lo que guarda es del niño (CLAVES_TEATRO); las grabaciones, no.
+  // =====================================================
+  const CLAVES_TEATRO = ['teatro-acento', 'teatro-modo', 'teatro-escena', 'teatro-dia'];
+  function crearTarjetaTeatro() {
+    const b = document.createElement('button');
+    b.className = 'tarjeta tarjeta-teatro media';
+    b.innerHTML = '<canvas class="tj-sprite tj-lobo" aria-hidden="true"></canvas>' +
+      '<span class="tj-texto"><span class="tj-nombre"><span class="emoji"></span><span></span></span><span class="tj-obra" lang="en"></span></span>' +
+      '<canvas class="tj-sprite tj-cerdito" aria-hidden="true"></canvas>';
+    b.querySelector('.emoji').textContent = JUEGOS.teatro.emoji;
+    b.querySelector('.tj-nombre').lastChild.textContent = JUEGOS.teatro.nombre;
+    b.querySelector('.tj-obra').textContent = JUEGOS.teatro.obra;
+    b.setAttribute('aria-label', JUEGOS.teatro.nombre + ': ' + JUEGOS.teatro.obra);
+    b.addEventListener('click', () => abrirJuego('teatro'));
+    return b;
+  }
+  // El lobo y un cerdito pintados con los sprites (como los de la Batalla)
+  function pintarTarjetaTeatro() {
+    const b = $('#juegos .tarjeta-teatro');
+    if (!b || !perfil) return;
+    const esc = window.innerWidth < 500 ? 2 : 3;
+    pintarSprite(b.querySelector('.tj-lobo'), 'lobo_cabeza', esc);
+    pintarSprite(b.querySelector('.tj-cerdito'), 'cerdito1', esc);
+  }
+  function abrirTeatro() {
+    if (!window.Teatro) return;
+    ir('teatro');
+    const ok = window.Teatro.abrir({
+      dato, guardarDato, ganarEstrella, hablar, bravo, fiesta, pip,
+      animo: () => azar(C.comun.animo),
+      frases: C.teatro || {},
+      avatar: (el) => { if (el && perfil) pintarAvatar(el, perfil); },
+    });
+    if (!ok) ir('menu');
   }
 
   // =====================================================
@@ -2357,6 +2406,7 @@
     pintarEstrellas();
     if (perfil && !$('#btn-letra').hidden && $('#btn-letra').textContent !== MODOS_LETRA[modoLetra()]) { pintarBtnLetra(); repintarLetras(); }
     if (vista === 'menu') { pintarTarjetaBatalla(); if (!esPeque()) pintarNiveles(); }
+    if (vista === 'teatro' && window.Teatro) window.Teatro.repintar();
     if (vista === 'elegir') pintarRejillas();
     if (vista === 'minijuegos') pintarMinijuegos();
     if (!$('#padres').hidden) pintarPanelPadres();

@@ -1,0 +1,104 @@
+name: Generar voces del teatro (inglés)
+
+# Se lanza a mano: Actions > "Generar voces del teatro (inglés)" > Run workflow.
+# Las frases de js/teatro-guion.js (The Three Little Pigs) en inglés británico (gb) y americano (us), con
+# ElevenLabs y el momento de cada palabra: scripts/generar-teatro.mjs. La clave se lee del Secret
+# ELEVENLABS_API_KEY y nunca se guarda en el repo.
+#   modo prueba: las escenas 1 y 2 de cada acento en prueba-teatro/, para escuchar las voces: se descargan
+#                de la ejecución (Artifacts > prueba-teatro) o de la rama prueba-teatro. No toca audio/ ni main.
+#   modo todo:   lo que falte en audio/teatro/ y su manifiesto, guardado con commit en main. Lo que ya está
+#                no se vuelve a pagar (con "regenerar", sí).
+# Antes de generar, el log dice cuántos caracteres va a gastar.
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "prueba (2 escenas por acento, para escuchar) o todo (se guarda en el repo)"
+        type: choice
+        options:
+          - prueba
+          - todo
+        default: prueba
+      acento:
+        description: "Acento"
+        type: choice
+        options:
+          - los dos
+          - gb
+          - us
+        default: los dos
+      regenerar:
+        description: "Regenerar también lo que ya está (vuelve a gastar esos caracteres)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  teatro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Opciones
+        # Las entradas, comprobadas, como opciones del script (en OPCIONES, para los pasos de abajo)
+        env:
+          MODO: ${{ inputs.modo }}
+          ACENTO: ${{ inputs.acento }}
+          REGENERAR: ${{ inputs.regenerar }}
+        run: |
+          # En modo todo se guarda en main: desde otra rama, se para antes de gastar nada
+          if [ "$MODO" = "todo" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then echo "::error::Lánzalo desde main para guardar las voces"; exit 1; fi
+          op=""
+          [ "$MODO" = "prueba" ] && op="$op --prueba"
+          case "$ACENTO" in gb|us) op="$op --acento $ACENTO" ;; esac
+          [ "$REGENERAR" = "true" ] && op="$op --force"
+          echo "OPCIONES=$op" >> "$GITHUB_ENV"
+          echo "Opciones:$op"
+
+      - name: Contar caracteres (sin gastar)
+        run: node scripts/generar-teatro.mjs --dry-run $OPCIONES
+
+      - name: Generar voces
+        run: node scripts/generar-teatro.mjs $OPCIONES
+
+      # --- Modo prueba ---
+      - name: Subir la prueba para descargar
+        if: ${{ inputs.modo == 'prueba' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: prueba-teatro
+          path: prueba-teatro/
+          retention-days: 7
+      - name: Guardar la prueba en la rama prueba-teatro (no toca main)
+        if: ${{ inputs.modo == 'prueba' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan prueba-teatro
+          git rm -rfq --cached .
+          git add -f prueba-teatro
+          git commit -qm "Muestra de voces del teatro"
+          git push -qf origin prueba-teatro
+
+      # --- Modo todo ---
+      - name: Guardar voces en main
+        # También si la generación ha fallado a medias (sin créditos, sin red): lo hecho ya está en el
+        # manifiesto y así no se vuelve a pagar
+        if: ${{ !cancelled() && inputs.modo == 'todo' }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then echo "::error::Lánzalo desde main para guardar las voces"; exit 1; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A audio/teatro
+          git diff --cached --quiet && echo "Sin cambios" && exit 0
+          git commit -m "Voces del teatro en inglés (ElevenLabs)"
+          git pull --rebase origin main
+          git push origin HEAD:main

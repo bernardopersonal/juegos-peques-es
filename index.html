@@ -18,7 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
   <!-- ?v=AAAAMMDD en la hoja de estilos y en todos los <script> de abajo: cámbiala (la misma en todos) en cada
        despliegue, así un index.html nuevo nunca se junta con un .css o .js viejo de la caché del navegador -->
-  <link rel="stylesheet" href="css/estilos.css?v=20261015">
+  <link rel="stylesheet" href="css/estilos.css?v=20261107">
 </head>
 <body>
 <!--CUERPO-->
@@ -138,6 +138,60 @@
       <button class="btn-redondo" id="juego-oir" aria-label="Escuchar otra vez">🔊</button>
       <button class="btn-redondo" id="juego-pista" aria-label="Pista" hidden>💡</button>
     </div>
+  </main>
+
+  <!-- Teatro en inglés (js/teatro.js): The Three Little Pigs. Arriba el modo y el acento; el escenario (un canvas
+       pixelado, js/teatro-escena.js), la frase con karaoke y su traducción, los botones del modo y la tira de escenas -->
+  <main id="v-teatro" class="vista vista-teatro" hidden>
+    <div class="tt-cabecera">
+      <div class="tt-modos" role="group" aria-label="Modo">
+        <button class="tt-modo" data-tt-modo="escuchar" aria-pressed="true"><span class="emoji" aria-hidden="true">👂</span><span>Escuchar</span></button>
+        <button class="tt-modo" data-tt-modo="ensayo" aria-pressed="false"><span class="emoji" aria-hidden="true">🎭</span><span>Ensayo</span></button>
+        <button class="tt-modo" data-tt-modo="adivina" aria-pressed="false"><span class="emoji" aria-hidden="true">🧩</span><span>¿Qué viene?</span></button>
+      </div>
+      <div class="tt-acentos" role="group" aria-label="Acento del inglés">
+        <button class="tt-acento" data-acento="gb" aria-pressed="true" aria-label="Inglés británico">🇬🇧</button>
+        <button class="tt-acento" data-acento="us" aria-pressed="false" aria-label="Inglés americano">🇺🇸</button>
+      </div>
+    </div>
+    <div class="tt-cuerpo">
+      <div class="tt-escenario">
+        <canvas id="tt-lienzo" role="img" aria-label="El escenario: el lobo, los tres cerditos y sus casas"></canvas>
+        <div class="tt-cartel" id="tt-cartel" aria-hidden="true" hidden></div>
+      </div>
+      <div class="tt-panel">
+        <div class="tt-guion" aria-live="polite">
+          <p class="tt-linea" id="tt-linea" lang="en"></p>
+          <p class="tt-es" id="tt-es"></p>
+        </div>
+        <!-- 1. Escuchar y repetir -->
+        <div class="tt-controles" id="tt-escuchar">
+          <button class="tt-btn tt-flecha" id="tt-ant" aria-label="Escena anterior">⬅️</button>
+          <button class="tt-btn" id="tt-oir" aria-label="Escuchar otra vez"><span class="emoji" aria-hidden="true">🔊</span><span>Otra vez</span></button>
+          <button class="tt-btn" id="tt-despacio" aria-label="Despacio y a trozos"><span class="emoji" aria-hidden="true">🐢</span><span>Despacio</span></button>
+          <button class="tt-btn tt-grande" id="tt-grabar" aria-label="¡Ahora tú! Grabar"><span class="emoji" aria-hidden="true">🎤</span><span>¡Ahora tú!</span><span class="tt-nivel" aria-hidden="true"><i></i></span></button>
+          <button class="tt-btn" id="tt-tuyo" aria-label="Escuchar tu grabación y la del lobo" hidden><span class="tt-avatar" aria-hidden="true"></span><span>▶ 🐺</span></button>
+          <button class="tt-btn tt-grande tt-soplar" id="tt-soplar" aria-label="¡Sopla!" hidden><span class="emoji" aria-hidden="true">💨</span><span>¡Sopla!</span><span class="tt-medidor" aria-hidden="true"><i></i></span></button>
+          <button class="tt-btn tt-flecha" id="tt-sig" aria-label="Escena siguiente">➡️</button>
+        </div>
+        <!-- 2. Ensayo: la obra entera -->
+        <div class="tt-controles" id="tt-ensayo" hidden>
+          <button class="tt-btn tt-grande tt-ok" id="tt-empezar"><span class="emoji" aria-hidden="true">▶️</span><span>¡Empezamos!</span></button>
+          <button class="tt-btn" id="tt-apuntador" aria-label="Apuntador: dime la frase" hidden><span class="emoji" aria-hidden="true">💡</span><span>Apuntador</span></button>
+          <button class="tt-btn tt-grande tt-ok" id="tt-dicho" hidden><span class="emoji" aria-hidden="true">✅</span><span>¡Lo he dicho!</span></button>
+          <button class="tt-btn tt-grande" id="tt-otra" hidden><span class="emoji" aria-hidden="true">🔁</span><span>Otra vez</span></button>
+        </div>
+        <!-- 3. ¿Qué viene ahora?: 3 tarjetas con dibujo -->
+        <div class="tt-adivina" id="tt-adivina" hidden>
+          <div class="tt-tarjetas" id="tt-tarjetas"></div>
+          <div class="tt-fila">
+            <button class="tt-btn" id="tt-repetir" aria-label="Escuchar otra vez a los cerditos"><span class="emoji" aria-hidden="true">🔊</span><span>Otra vez</span></button>
+            <div class="tt-puntos" id="tt-puntos" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tt-tira" id="tt-tira" role="group" aria-label="Escenas"></div>
   </main>
 
   <!-- Batalla de bloques: contra quién (monstruos o 1 contra 1), héroe y nivel (se desbloquea con estrellas) -->
@@ -306,17 +360,22 @@
   <div id="fiesta" aria-hidden="true"></div>
 <!--/CUERPO-->
   <!-- (la versión ?v=: ver arriba, junto a la hoja de estilos; cámbiala en cada despliegue) -->
-  <script src="audio/manifest.js?v=20261015"></script>
-  <script src="js/frases.js?v=20261015"></script>
-  <script src="js/familia.js?v=20261015"></script>
-  <script src="js/contenido.js?v=20261015"></script>
-  <script src="js/temas.js?v=20261015"></script>
-  <script src="js/trazos.js?v=20261015"></script>
-  <script src="js/minijuegos/sprites.js?v=20261015"></script>
-  <script src="js/minijuegos/sfx.js?v=20261015"></script>
-  <script src="js/minijuegos/batalla.js?v=20261015"></script>
-  <script src="js/minijuegos/red.js?v=20261015"></script>
-  <script src="js/nube.js?v=20261015"></script>
-  <script src="js/app.js?v=20261015"></script>
+  <script src="audio/manifest.js?v=20261107"></script>
+  <!-- Teatro: los audios en inglés (window.TEATRO_AUDIOS; null mientras no estén) y el guion, antes de js/teatro.js -->
+  <script src="audio/teatro/manifest.js?v=20261107"></script>
+  <script src="js/frases.js?v=20261107"></script>
+  <script src="js/familia.js?v=20261107"></script>
+  <script src="js/contenido.js?v=20261107"></script>
+  <script src="js/teatro-guion.js?v=20261107"></script>
+  <script src="js/temas.js?v=20261107"></script>
+  <script src="js/trazos.js?v=20261107"></script>
+  <script src="js/minijuegos/sprites.js?v=20261107"></script>
+  <script src="js/minijuegos/sfx.js?v=20261107"></script>
+  <script src="js/minijuegos/batalla.js?v=20261107"></script>
+  <script src="js/minijuegos/red.js?v=20261107"></script>
+  <script src="js/teatro-escena.js?v=20261107"></script>
+  <script src="js/teatro.js?v=20261107"></script>
+  <script src="js/nube.js?v=20261107"></script>
+  <script src="js/app.js?v=20261107"></script>
 </body>
 </html>
